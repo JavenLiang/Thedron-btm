@@ -8,12 +8,12 @@ class BTM:
         self.data_chunk = 0.25        ### data chunk each time buffer is updated
 
     #### running functions
-    def connect(self, sample_rate):
+    def connect(self, chunk_length):
         """
         Connect to a running data stream (from muselsl or petal)
 
         input:
-        sample_rate: target sampling frequency
+        chunk_length: max chunk length for StreamInlet, use small number for real-time app
 
         output:
         stream_in: data stream object
@@ -25,7 +25,7 @@ class BTM:
             raise RuntimeError('No EEG stream')
 
         print("Acquiring data")
-        self.stream_in = StreamInlet(streams[0], max_chunklen=sample_rate)
+        self.stream_in = StreamInlet(streams[0], max_chunklen=chunk_length)
         eeg_time_corr = self.stream_in.time_correction()
         return self.stream_in, eeg_time_corr
 
@@ -61,7 +61,6 @@ class BTM:
                 # print(ch_data)
                 eeg_buffer = self.update_buffer(eeg_buffer, ch_data)
                 print(eeg_buffer)
-
 
         except Exception as e:
             print(e)
@@ -100,6 +99,6 @@ class BTM:
 if __name__ == "__main__":
     
     btm = BTM()
-    stream_in, __ = btm.connect(250)
+    stream_in, __ = btm.connect(1)
     btm.run([0, 1, 2, 3])
 
