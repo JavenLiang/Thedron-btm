@@ -1,5 +1,6 @@
 import numpy as np
 from pylsl import StreamInlet, resolve_byprop 
+from Process_Features.feature_extract import feature_extract
 
 class BTM:
     def __init__(self):
@@ -60,7 +61,8 @@ class BTM:
                 ch_data = np.array(eeg_data)[:, channels]
                 # print(ch_data)
                 eeg_buffer = self.update_buffer(eeg_buffer, ch_data)
-                print(eeg_buffer)
+                print(feature_extract(eeg_buffer, self.freqs))
+                # print(eeg_buffer)
 
         except Exception as e:
             print(e)
