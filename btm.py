@@ -2,7 +2,7 @@ import numpy as np
 from pylsl import StreamInlet, resolve_byprop 
 
 class BTM:
-    def __init__(self, args):
+    def __init__(self):
         self.buffer_len = 5
         self.len_epoch = 1
         self.epoch_overlap = 0.75
@@ -10,10 +10,12 @@ class BTM:
 
     #### running functions
     def connect(self, sample_rate):
+        print("Connecting to device")
         streams = resolve_byprop('type', 'EEG', timeout=2)
         if len(streams) == 0:
             raise RuntimeError('No EEG stream')
 
+        print("Acquiring data")
         self.stream_in = StreamInlet(streams[0], max_chunklen=sample_rate)
         eeg_time_corr = self.stream_in.time_correction()
         return self.stream_in, eeg_time_corr
@@ -26,6 +28,7 @@ class BTM:
 
 
     def run(self, channels):
+        eeg_buffer = self.init_buffer()
         try:
             while True:
                 eeg_data, timestamp = self.stream_in.pull_chunk(
@@ -35,7 +38,8 @@ class BTM:
 
                 eeg_buffer = self.update_buffer(eeg_buffer, ch_data)
                 print(eeg_buffer)
-        except:
+        except Exception as e:
+            print(e)
             print("Ending")
 
     #### Helper functions
@@ -45,7 +49,7 @@ class BTM:
     def set_channel(self, ch):
         self.channel = ch
 
-    def update_buffer(data_buffer, new_data):
+    def update_buffer(self, data_buffer, new_data):
         if new_data.ndim == 1:
             new_data = new_data.reshape(-1, data_buffer.shape[1])
 
@@ -58,6 +62,7 @@ class BTM:
 if __name__ == "__main__":
     
     btm = BTM()
-
     stream_in, __ = btm.connect(250)
+    btm.init_buffer()
+    btm.run([0])
 
