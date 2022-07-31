@@ -7,6 +7,7 @@ Created on Sat Jul 30 13:26:23 2022
 credit:
     -streaming data code inspired by "Python IV workshop" from NeurTechAlberta 
     -low pass filter from https://www.adamsmith.haus/python/answers/how-to-create-a-low-pass-filter-in-python
+    -power band calculations based on https://github.com/alexandrebarachant/muse-lsl/blob/master/examples/utils.py
 """
 #%% import libraries
 import numpy as np
@@ -54,6 +55,9 @@ def compute_band_powers(eegdata, fs):
     meanBeta = np.mean(PSD[ix_beta, :], axis=0)
     ix_gamma, = np.where((f >= 30) & (f < 55))
     meanGamma = np.mean(PSD[ix_gamma, :], axis=0)
+    
+    #normalize between 0 and 1 using known upper limits from test recordings
+    #meanDelta = 
 
     #gather results
     band_powers = np.concatenate((meanDelta, meanTheta, meanAlpha, meanBeta, meanGamma), axis=0)
@@ -70,7 +74,8 @@ def feature_extract(eeg_chunk, s_rate):
         s_rate - sampling rate of data
         
     output:
-        feature_dict - dictionary of features. Currently only "variance" 
+        feature_dict - dictionary of features. 
+             i.e. "variance","alpha","beta","delta","theta","gamma"
     """
         
     #%% preprocess signal
