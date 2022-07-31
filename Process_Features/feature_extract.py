@@ -21,27 +21,15 @@ def feature_extract(eeg_chunk, s_rate):
     #%% import libraries
     import numpy as np
     from scipy.signal import butter, lfilter
-    #from pylsl import StreamInfo, StreamOutlet
-    #from pylsl import StreamInlet, resolve_byprop
-    
     
     #%% init global vars
-    #s_rate = 250 #temp value until confirmed
-    #win_size = 10 #temp value, window size for input stream
     cutoff_freq = 55 #remove freq. above 55Hz, temp value
-    
-    #%% setup input stream
-    #streams = resolve_byprop('type', 'EEG', timeout=2) #change timeout later?
-    #stream = streams[0] #should be only 1 stream (with 1 channel for now)
-        
-    #object to receive input form stream
-    #inlet = StreamInlet(stream, max_chunklen = win_size) 
         
     #%%% preprocess signal
-    #handle if stream is empty (if empty, use previous eeg chunk?)
     
-    #receive a window of data from lsl stream
-    #eeg_chunk, ts = inlet.pull_chunk(timeout=.5, max_samples= win_size) #timeout should be 0 to be as fast as possible?
+    #if more than one channel, average them all
+    if len(eeg_chunk.shape) > 1:
+        eeg_chunk = eeg_chunk.mean(axes=1)
     
     #low pass filter
     normalized_cutoff_freq = 2 * cutoff_freq / s_rate
@@ -49,7 +37,6 @@ def feature_extract(eeg_chunk, s_rate):
     feeg_chunk = lfilter(numerator_coeffs, denominator_coeffs, eeg_chunk)
     
     #remove eyeblink/jaw artifacts
-    
     
     #%%% compute features
     #calc variance
