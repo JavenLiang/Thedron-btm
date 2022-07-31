@@ -22,7 +22,7 @@ from PyQt5.QtCore import pyqtSlot
 
 import UI.live_matplot_funcs as live_matplot_funcs
 from os import path
-import btm
+from btm import BTM
 
 matplotlib.use('Qt5Agg')
 
@@ -41,17 +41,20 @@ class BRAIN_MUSIC_PLAYER(QtWidgets.QMainWindow):
         self.ui = uic.loadUi(ui_path,self)
         self.resize(888, 600)
         
-        # LSL stream
-        #get and print list of detected lsl streams
-        streams = resolve_byprop('type', 'EEG', timeout=2)
-        print(streams)
-        #choose the stream we want, since there is only one it'll be the first
-        stream = streams[0]
-        #number of samples per second 
-        sample_rate = 250 
-        #the object that lets us pull data from the stream 
-        self.inlet = StreamInlet(stream, max_chunklen = sample_rate)
+        # # LSL stream
+        # #get and print list of detected lsl streams
+        # streams = resolve_byprop('type', 'EEG', timeout=2)
+        # print(streams)
+        # #choose the stream we want, since there is only one it'll be the first
+        # stream = streams[0]
+        # #number of samples per second 
+        # sample_rate = 250 
+        # #the object that lets us pull data from the stream 
+        # self.inlet = StreamInlet(stream, max_chunklen = sample_rate)
         
+        self.btm = BTM()
+        self.btm.connect(5)
+
         #Flags
         self.music_on = False
         self.plot_on = False
@@ -106,10 +109,10 @@ class BRAIN_MUSIC_PLAYER(QtWidgets.QMainWindow):
         self.comboBox.currentIndexChanged['QString'].connect(self.update_feature)
         
         # Checkbox Events
-        self.checkBox.stateChanged.connect(self.update_channel)
-        self.checkBox_2.stateChanged.connect(self.update_channel)
-        self.checkBox_3.stateChanged.connect(self.update_channel)
-        self.checkBox_4.stateChanged.connect(self.update_channel)
+        # self.radioButton.stateChanged.connect(self.update_channel)
+        # self.radioButton_2.stateChanged.connect(self.update_channel)
+        # self.radioButton_3.stateChanged.connect(self.update_channel)
+        # self.radioButton_4.stateChanged.connect(self.update_channel)
 
     def getData(self):
         QtWidgets.QApplication.processEvents()    
@@ -117,8 +120,9 @@ class BRAIN_MUSIC_PLAYER(QtWidgets.QMainWindow):
 
         while(self.plot_on):
             QtWidgets.QApplication.processEvents()    
-            samples,time = self.inlet.pull_chunk(timeout=.5, max_samples=CHUNK)
-           
+            # samples,time = self.inlet.pull_chunk(timeout=.5, max_samples=CHUNK)
+            samples = self.btm.stream_update([0])
+            print(samples)
             self.pq.put_nowait(samples)
             
             if self.plot_on is False:
@@ -209,7 +213,8 @@ class BRAIN_MUSIC_PLAYER(QtWidgets.QMainWindow):
         self.pushButton.setEnabled(True)
         
     def start_plot(self):
-            
+        self.btm.init_buffer(1)
+
         self.pushButton_2.setEnabled(False)
         self.canvas.axes.clear()
         self.plot_on = True
@@ -217,6 +222,7 @@ class BRAIN_MUSIC_PLAYER(QtWidgets.QMainWindow):
         self.threadpool.start(self.plot_worker)    
         self.preference_plot = None
         self.timer.setInterval(30) #msec
+
 
     def start_music(self):
         
@@ -265,11 +271,11 @@ class BRAIN_MUSIC_PLAYER(QtWidgets.QMainWindow):
                 
                 chunk_data = np.vstack(self.pdata).T
                 new_data = chunk_data[0] #get a shape (250,)
+                # self.plotdata = live_matplot_funcs.update_data_array(self.plotdata, new_data)
                 
-                self.plotdata = live_matplot_funcs.update_data_array(self.plotdata, new_data)
-                
-                self.plotdata[ -len(new_data) : ] = new_data
-      
+                # self.plotdata[ -len(new_data) : ] = new_data
+
+                self.plotdata = new_data
                 if self.preference_plot is None:
                     plot_refs = self.canvas.axes.plot( self.plotdata, color=(0,1,0.29))
                     self.preference_plot = plot_refs[0]    
@@ -278,9 +284,9 @@ class BRAIN_MUSIC_PLAYER(QtWidgets.QMainWindow):
                     
             self.canvas.axes.yaxis.grid(True,linestyle='--')
             start, end = self.canvas.axes.get_ylim()
-            self.canvas.axes.yaxis.set_ticks(np.arange(start, end, 0.5))
-            self.canvas.axes.yaxis.set_major_formatter(ticker.FormatStrFormatter('%0.1f'))
-            self.canvas.axes.set_ylim( ymin=-1, ymax=1)        
+            # self.canvas.axes.yaxis.set_ticks(np.arange(start, end, 0.5))
+            # self.canvas.axes.yaxis.set_major_formatter(ticker.FormatStrFormatter('%0.1f'))
+            self.canvas.axes.set_ylim( ymin=-10, ymax=10)        
 
             self.canvas.draw()
         except Exception as e:
@@ -341,11 +347,11 @@ class Worker(QtCore.QRunnable):
 
 if __name__ == '__main__':
 
-    stream_process = Process(target=live_matplot_funcs.sendingData)
-    stream_process.start()
+    # stream_process = Process(target=live_matplot_funcs.sendingData)
+    # stream_process.start()
     
-    if stream_process.is_alive():
-        print("streaming data...")
+    # if stream_process.is_alive():
+    #     print("streaming data...")
     
     app = QtWidgets.QApplication(sys.argv)
     mainWindow = BRAIN_MUSIC_PLAYER()

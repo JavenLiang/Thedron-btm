@@ -95,31 +95,28 @@
         </property>
         <layout class="QVBoxLayout" name="verticalLayout">
          <item>
-          <widget class="QCheckBox" name="checkBox">
+          <widget class="QRadioButton" name="radioButton">
            <property name="text">
             <string>Channel 1</string>
            </property>
           </widget>
          </item>
          <item>
-          <widget class="QCheckBox" name="checkBox_2">
+          <widget class="QRadioButton" name="radioButton_2">
            <property name="text">
             <string>Channel 2</string>
-           </property>
-           <property name="tristate">
-            <bool>false</bool>
            </property>
           </widget>
          </item>
          <item>
-          <widget class="QCheckBox" name="checkBox_3">
+          <widget class="QRadioButton" name="radioButton_3">
            <property name="text">
             <string>Channel 3</string>
            </property>
           </widget>
          </item>
          <item>
-          <widget class="QCheckBox" name="checkBox_4">
+          <widget class="QRadioButton" name="radioButton_4">
            <property name="text">
             <string>Channel 4</string>
            </property>
@@ -133,7 +130,7 @@
           <x>400</x>
           <y>130</y>
           <width>239</width>
-          <height>25</height>
+          <height>32</height>
          </rect>
         </property>
         <layout class="QHBoxLayout" name="horizontalLayout">
@@ -177,7 +174,7 @@
      <x>0</x>
      <y>0</y>
      <width>748</width>
-     <height>21</height>
+     <height>24</height>
     </rect>
    </property>
   </widget>

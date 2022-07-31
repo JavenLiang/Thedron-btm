@@ -6,7 +6,7 @@ import csv
 
 class BTM:
     def __init__(self):
-        self.buffer_len = 20           ### length of the buffer (sec)
+        self.buffer_len = 5           ### length of the buffer (sec)
         self.freqs = 0                ### variable for input frequency
         self.data_chunk = 0.25        ### data chunk each time buffer is updated
 
@@ -59,16 +59,10 @@ class BTM:
             while True:
                 self.stream_update(channels)
                 # print(feature_extract(eeg_buffer))
-                print(self.eeg_buffer)
+                # print(self.eeg_buffer)
 
                 # Enable for generating sample data
-                # if eeg_buffer[0,0] != 0:
-                #     with open('eegs.csv', 'w', newline='') as csvfile:
-                #         for row in eeg_buffer:
-                #             print
-                #             spamwriter = csv.writer(csvfile, delimiter=' ')
-                #             spamwriter.writerow(row)
-                #     break
+                # self.buffer_to_file(eeg_buffer)
 
 
         except Exception as e:
@@ -81,7 +75,9 @@ class BTM:
 
         ch_data = np.array(eeg_data)[:, channels]
         self.eeg_buffer = self.update_buffer(self.eeg_buffer, ch_data)
+        print(self.eeg_buffer)
         return self.eeg_buffer
+
 
     #### Helper functions
     def get_buffer_len(self):
@@ -120,10 +116,17 @@ class BTM:
 
         return new_buffer
         
+    def buffer_to_file(self, eeg_buffer):
+        if eeg_buffer[0,0] != 0:
+            with open('eegs.csv', 'w', newline='') as csvfile:
+                for row in eeg_buffer:
+                    print
+                    spamwriter = csv.writer(csvfile, delimiter=' ')
+                    spamwriter.writerow(row)
 
 if __name__ == "__main__":
     
     btm = BTM()
     stream_in, __ = btm.connect(5)
-    btm.run([0, 1, 2, 3])
+    btm.run([0])
 
