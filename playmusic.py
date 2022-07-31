@@ -1,6 +1,10 @@
 # apt-get install libasound2-dev
 # sudo apt-get install libjack0 libjack-dev jackd2
+import time
+
+import numpy as np
 import pygame
+
 from mido import tick2second, MidiFile
 from copy import deepcopy
 from io import BytesIO
@@ -9,6 +13,7 @@ mid = MidiFile('./data/Never-Gonna-Give-You-Up-2.mid')
 BUFFER_LEN = 5  # secs
 cnt = 0
 past_dur = 0  # secs
+past_msg_itr = 0
 tempo = None
 meta_mid = MidiFile(type=mid.type, ticks_per_beat=mid.ticks_per_beat)
 meta_mid.add_track(mid.tracks[0].name)
@@ -28,6 +33,7 @@ buff = np.zeros(srate*BUFFER_LEN)*8 #init array that will hold 2 seconds (500 sa
 
 pygame.mixer.init()
 
+tot_msgs = len(mid.tracks[0])
 tstart = time.time()
 time.sleep(BUFFER_LEN)
 while True:
@@ -45,9 +51,11 @@ while True:
         #update data array
         data = update_data_array(buff,channel_1)
 
-        dur = 0
+        dur = past_dur
         subset_midi = deepcopy(meta_mid)
-        for i, msg in enumerate(mid.tracks[0]):
+        for itr in range(past_msg_itr, tot_msgs):
+            msg = mid.tracks[0][itr]
+            past_msg_itr += 1
             if msg.type == 'set_tempo':
                 tempo = msg.tempo
             if (
@@ -72,4 +80,5 @@ while True:
         bytestream.seek(0)
         pygame.mixer.music.load(bytestream)
         pygame.mixer.music.play()
+        if past_msg_itr >= tot_msgs: break
         time.sleep(BUFFER_LEN - (time.time() - tstart))
