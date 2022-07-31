@@ -62,7 +62,7 @@ class BTM:
                 ch_data = np.array(eeg_data)[:, channels]
                 # print(ch_data)
                 eeg_buffer = self.update_buffer(eeg_buffer, ch_data)
-                print(feature_extract(eeg_buffer, self.freqs))
+                print(feature_extract(eeg_buffer))
                 # print(eeg_buffer)
 
         except Exception as e:
