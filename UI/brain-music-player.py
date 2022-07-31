@@ -1,20 +1,29 @@
-import sys
-import matplotlib
-matplotlib.use('Qt5Agg')
-from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
-from matplotlib.figure import Figure
-import matplotlib.ticker as ticker
 import queue
-import numpy as np
-from PyQt5 import QtCore, QtWidgets,QtGui
-from PyQt5 import uic
-from PyQt5.QtCore import pyqtSlot
-import wave, pyaudio
-from pylsl import StreamInfo, StreamOutlet
+import sys
+import time
+import wave
+from copy import deepcopy
+from io import BytesIO
+from multiprocessing import Process, Queue, set_start_method
+
+import matplotlib
 import matplotlib.pyplot as plt
-from pylsl import StreamInlet, resolve_byprop
-from multiprocessing import Process, Queue,set_start_method
+import matplotlib.ticker as ticker
+import numpy as np
+import pygame
+from matplotlib.backends.backend_qt5agg import (
+    FigureCanvasQTAgg as FigureCanvas
+)
+from matplotlib.figure import Figure
+from mido import MidiFile, tick2second
+from pylsl import StreamInfo, StreamInlet, StreamOutlet, resolve_byprop
+from PyQt5 import QtCore, QtGui, QtWidgets, uic
+from PyQt5.QtCore import pyqtSlot
+
 import live_matplot_funcs
+
+matplotlib.use('Qt5Agg')
+
 
 class MplCanvas(FigureCanvas):
     def __init__(self, parent=None, width=5, height=4, dpi=100):
@@ -98,7 +107,7 @@ class BRAIN_MUSIC_PLAYER(QtWidgets.QMainWindow):
         self.checkBox_2.stateChanged.connect(self.update_channel)
         self.checkBox_3.stateChanged.connect(self.update_channel)
         self.checkBox_4.stateChanged.connect(self.update_channel)
-             
+
     def getData(self):
         QtWidgets.QApplication.processEvents()    
         CHUNK = self.CHUNK
@@ -116,32 +125,84 @@ class BRAIN_MUSIC_PLAYER(QtWidgets.QMainWindow):
         
     def getAudio(self):
         QtWidgets.QApplication.processEvents()    
-        CHUNK = self.CHUNK
-        
-        wf = wave.open(self.tmpfile, 'rb')
-        p = pyaudio.PyAudio()
-        stream = p.open(format=p.get_format_from_width(wf.getsampwidth()),
-                        channels=wf.getnchannels(),
-                        rate=wf.getframerate(),
-                        output=True,
-                        frames_per_buffer=CHUNK)
-        self.samplerate = wf.getframerate()
+
+        mid = MidiFile('../data/Never-Gonna-Give-You-Up-2.mid')
+        BUFFER_LEN = 5  # secs
+        past_dur = 0  # secs
+        past_msg_itr = 0
+        tempo = None
+        meta_mid = MidiFile(type=mid.type, ticks_per_beat=mid.ticks_per_beat)
+        meta_mid.add_track(mid.tracks[0].name)
+        for msg in mid.tracks[0]:
+            if msg.is_meta:
+                if msg.type != 'track_name':
+                    meta_mid.tracks[0].append(msg)
+            else:
+                break
+
+        #the max number of samples pulled from lsl stream
+        srate = 250
+        CHUNK = srate*BUFFER_LEN
+
+        buff = np.zeros(srate*BUFFER_LEN)*8 #init array that will hold 2 seconds (500 samples) of eeg data to display
+        #init color map which converts a numeric value to rgb color, the range of the value is between 0 and 1
+
+        pygame.mixer.init()
+
+        tot_msgs = len(mid.tracks[0])
+        tstart = time.time()
+        # time.sleep(BUFFER_LEN)
         while(self.music_on):
             
-            QtWidgets.QApplication.processEvents()    
-            data = wf.readframes(CHUNK)
-            audio_as_np_int16 = np.frombuffer(data, dtype=np.int16)
-            audio_as_np_float32 = audio_as_np_int16.astype(np.float32)
-            # Normalise float32 array                                                   
-            max_int16 = 2**15
-            audio_normalised = audio_as_np_float32 / max_int16
-            
-            self.mq.put_nowait(audio_normalised)
-            stream.write(data)
-            
+            QtWidgets.QApplication.processEvents()
+            tstart = time.time()
+            #pull a chunk of eeg data from lsl stream
+            samples = self.plotdata
+            #check that samples contains values
+
+            if len(samples) > 0:
+                #samples is a length <= 250 list of lists which contain one value of the eeg stream
+                #convert it to a shape (1,250) array (1 channel, 250 timesteps)
+                chunk_data = np.vstack(samples).T
+                channel_1 = chunk_data[0] #get a shape (250,) array of data from the first (and only) channel
+
+                #update data array
+                data = live_matplot_funcs.update_data_array(buff,channel_1)
+
+                dur = past_dur
+                subset_midi = deepcopy(meta_mid)
+                for itr in range(past_msg_itr, tot_msgs):
+                    msg = mid.tracks[0][itr]
+                    past_msg_itr += 1
+                    if msg.type == 'set_tempo':
+                        tempo = msg.tempo
+                    if (
+                        not msg.is_meta
+                    ):
+                        if msg.type == 'note_on':
+                            msg.velocity  # ranges from 0-127
+                            msg.velocity = np.clip((np.random.randint(-32, 32) + msg.velocity,), 30, 115)[0]
+                        # https://music.stackexchange.com/questions/86241/how-can-i-split-a-midi-file-programatically
+                        curr_time = tick2second(msg.time, mid.ticks_per_beat, tempo)
+                        if dur + curr_time - past_dur > BUFFER_LEN:
+                            past_dur = dur
+                            break
+                        dur += curr_time
+                        if dur >= past_dur:
+                            subset_midi.tracks[0].append(msg)
+                subset_midi.tracks[0].append(mid.tracks[0][-1])
+
+                bytestream = BytesIO()
+                subset_midi.save(file=bytestream)
+                bytestream.seek(0)
+                pygame.mixer.music.load(bytestream)
+                pygame.mixer.music.play()
+                if past_msg_itr >= tot_msgs:
+                    self.music_on = False
+                time.sleep(BUFFER_LEN - (time.time() - tstart))
             if self.music_on is False:
                 break
-            
+
         self.pushButton.setEnabled(True)
         
     def start_plot(self):
@@ -167,8 +228,8 @@ class BRAIN_MUSIC_PLAYER(QtWidgets.QMainWindow):
     def stop_music(self):
         
         self.music_on = False
-        with self.mq.mutex:
-            self.mq.queue.clear()
+        # with self.mq.mutex:
+        #     self.mq.queue.clear()
         
 
     def start_music_stream(self):
@@ -176,7 +237,7 @@ class BRAIN_MUSIC_PLAYER(QtWidgets.QMainWindow):
         
     def start_plot_stream(self):
         self.getData()
-        
+
     def update_feature(self,value):
         self.feature = self.features_list.index(value)
         print(self.feature)
@@ -224,43 +285,43 @@ class BRAIN_MUSIC_PLAYER(QtWidgets.QMainWindow):
             # print(e)
     
     def update_music(self):
-        try:
+        pass
+        # try:
             
-            while self.music_on:
+        #     while self.music_on:
                 
-                QtWidgets.QApplication.processEvents()    
-                try: 
-                    self.mdata = self.mq.get_nowait()
+        #         QtWidgets.QApplication.processEvents()    
+        #         try: 
+        #             # self.mdata = self.mq.get_nowait()
+        #             self.self.pdata = self.pq.get_nowait()
                     
-                except queue.Empty:
-                    break
-                
-                shift = len(self.mdata)
-                
-                self.musicdata = np.roll(self.musicdata, -shift,axis = 0)
-                
-                self.musicdata = self.mdata
-                self.ydata = self.musicdata[:]
-                
-                self.mp.axes.set_facecolor((0,0,0))
-                
-      
-                if self.mreference_plot is None:
-                    plot_refs = self.mp.axes.plot( self.ydata, color=(0,1,0.29))
-                    self.mreference_plot = plot_refs[0]    
-                else:
-                    self.mreference_plot.set_ydata(self.ydata)
-                                
-            self.mp.axes.yaxis.grid(True,linestyle='--')
-            start, end = self.mp.axes.get_ylim()
-            self.mp.axes.yaxis.set_ticks(np.arange(start, end, 0.5))
-            self.mp.axes.yaxis.set_major_formatter(ticker.FormatStrFormatter('%0.1f'))
-            self.mp.axes.set_ylim( ymin=-1, ymax=1)        
+        #         except queue.Empty:
+        #             break
 
-            self.mp.draw()
-        except Exception as e:
+        #         chunk_data = np.vstack(self.pdata).T
+        #         new_data = chunk_data[0] #get a shape (250,)
+                
+        #         self.plotdata = live_matplot_funcs.update_data_array(self.plotdata, new_data)
+                
+        #         # self.musicdata = np.roll(self.musicdata, -shift,axis = 0)
+        #         # self.musicdata = self.mdata
+        #         # self.ydata = self.musicdata[:]
+        #         # self.mp.axes.set_facecolor((0,0,0))      
+        #         # if self.mreference_plot is None:
+        #         #     plot_refs = self.mp.axes.plot( self.ydata, color=(0,1,0.29))
+        #         #     self.mreference_plot = plot_refs[0]    
+        #         # else:
+        #         #     self.mreference_plot.set_ydata(self.ydata)         
+        #     # self.mp.axes.yaxis.grid(True,linestyle='--')
+        #     # start, end = self.mp.axes.get_ylim()
+        #     # self.mp.axes.yaxis.set_ticks(np.arange(start, end, 0.5))
+        #     # self.mp.axes.yaxis.set_major_formatter(ticker.FormatStrFormatter('%0.1f'))
+        #     # self.mp.axes.set_ylim( ymin=-1, ymax=1)        
+        #     # self.mp.draw()
+        # except Exception as e:
             
-            pass
+        #     pass
+
 
 class Worker(QtCore.QRunnable):
 
@@ -274,7 +335,7 @@ class Worker(QtCore.QRunnable):
     def run(self):
 
         self.function(*self.args, **self.kwargs)     
-        
+
 if __name__ == '__main__':
 
     stream_process = Process(target=live_matplot_funcs.sendingData)
