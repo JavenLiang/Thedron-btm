@@ -10,7 +10,11 @@ from PyQt5 import QtCore, QtWidgets,QtGui
 from PyQt5 import uic
 from PyQt5.QtCore import pyqtSlot
 import wave, pyaudio
-
+from pylsl import StreamInfo, StreamOutlet
+import matplotlib.pyplot as plt
+from pylsl import StreamInlet, resolve_byprop
+from multiprocessing import Process, Queue,set_start_method
+import live_matplot_funcs
 
 class MplCanvas(FigureCanvas):
     def __init__(self, parent=None, width=5, height=4, dpi=100):
@@ -25,15 +29,27 @@ class BRAIN_MUSIC_PLAYER(QtWidgets.QMainWindow):
         self.ui = uic.loadUi('temp.ui',self)
         self.resize(888, 600)
         
+        # LSL stream
+        #get and print list of detected lsl streams
+        streams = resolve_byprop('type', 'EEG', timeout=2)
+        print(streams)
+        #choose the stream we want, since there is only one it'll be the first
+        stream = streams[0]
+        #number of samples per second 
+        sample_rate = 250 
+        #the object that lets us pull data from the stream 
+        self.inlet = StreamInlet(stream, max_chunklen = sample_rate)
+        
         #Flags
         self.music_on = False
         self.plot_on = False
 
         self.threadpool = QtCore.QThreadPool()    
-        self.threadpool.setMaxThreadCount(2)
-        self.CHUNK = 1024
-        self.mq = queue.Queue(maxsize=self.CHUNK)
-        self.pq = queue.Queue()
+        # self.threadpool.setMaxThreadCount(2)
+        self.CHUNK = 250
+        # self.mq = queue.Queue(maxsize=self.CHUNK)
+        self.pq = Queue(maxsize=self.CHUNK)
+        self.mq = Queue(maxsize=self.CHUNK)
         
         self.features_list= ['feature1','feature2','feature3']
         self.tmpfile = 'temp.wav'
@@ -51,7 +67,7 @@ class BRAIN_MUSIC_PLAYER(QtWidgets.QMainWindow):
         self.ui.gridLayout.addWidget(self.mp, 2, 0, 1, 1)
         self.mreference_plot = None
         
-        self.plotdata =  np.zeros((500,500))
+        self.plotdata =  np.zeros(500)
         self.musicdata = np.zeros((500,500))
         
         # music timer
@@ -86,31 +102,16 @@ class BRAIN_MUSIC_PLAYER(QtWidgets.QMainWindow):
     def getData(self):
         QtWidgets.QApplication.processEvents()    
         CHUNK = self.CHUNK
-        
-        wf = wave.open(self.tmpfile, 'rb')
-        p = pyaudio.PyAudio()
-        stream = p.open(format=p.get_format_from_width(wf.getsampwidth()),
-                        channels=wf.getnchannels(),
-                        rate=wf.getframerate(),
-                        output=True,
-                        frames_per_buffer=CHUNK)
-        self.samplerate = wf.getframerate()
+
         while(self.plot_on):
-            
             QtWidgets.QApplication.processEvents()    
-            data = wf.readframes(CHUNK)
-            audio_as_np_int16 = np.frombuffer(data, dtype=np.int16)
-            audio_as_np_float32 = audio_as_np_int16.astype(np.float32)
-            # Normalise float32 array                                                   
-            max_int16 = 2**15
-            audio_normalised = audio_as_np_float32 / max_int16
-            
-            self.pq.put_nowait(audio_normalised)
-            stream.write(data)
+            samples,time = self.inlet.pull_chunk(timeout=.5, max_samples=CHUNK)
+           
+            self.pq.put_nowait(samples)
             
             if self.plot_on is False:
                 break
-            
+    
         self.pushButton_2.setEnabled(True)
         
     def getAudio(self):
@@ -162,7 +163,7 @@ class BRAIN_MUSIC_PLAYER(QtWidgets.QMainWindow):
         self.threadpool.start(self.music_worker)    
         self.mreference_plot = None
         self.music_timer.setInterval(30) #msec
-        
+            
     def stop_music(self):
         
         self.music_on = False
@@ -189,7 +190,7 @@ class BRAIN_MUSIC_PLAYER(QtWidgets.QMainWindow):
     def update_plot(self):
         try:
             
-            while  self.plot_on:
+            while self.plot_on:
                 
                 QtWidgets.QApplication.processEvents()    
                 try: 
@@ -198,39 +199,34 @@ class BRAIN_MUSIC_PLAYER(QtWidgets.QMainWindow):
                 except queue.Empty:
                     break
                 
-                shift = len(self.pdata)
+                chunk_data = np.vstack(self.pdata).T
+                new_data = chunk_data[0] #get a shape (250,)
                 
-                self.plotdata = np.roll(self.plotdata, -shift,axis = 0)
+                self.plotdata = live_matplot_funcs.update_data_array(self.plotdata, new_data)
                 
-                self.plotdata = self.pdata
-                self.ydata = self.plotdata[:]
-                
-                # self.mp.axes.set_facecolor((0,0,0))
-                
+                self.plotdata[ -len(new_data) : ] = new_data
       
                 if self.preference_plot is None:
-                    plot_refs = self.canvas.axes.plot( self.ydata, color=(0,1,0.29))
+                    plot_refs = self.canvas.axes.plot( self.plotdata, color=(0,1,0.29))
                     self.preference_plot = plot_refs[0]    
                 else:
-                    self.preference_plot.set_ydata(self.ydata)
+                    self.preference_plot.set_ydata(self.plotdata)
                     
-
-            
             self.canvas.axes.yaxis.grid(True,linestyle='--')
             start, end = self.canvas.axes.get_ylim()
-            self.canvas.axes.yaxis.set_ticks(np.arange(start, end, 0.1))
+            self.canvas.axes.yaxis.set_ticks(np.arange(start, end, 0.5))
             self.canvas.axes.yaxis.set_major_formatter(ticker.FormatStrFormatter('%0.1f'))
             self.canvas.axes.set_ylim( ymin=-1, ymax=1)        
 
             self.canvas.draw()
         except Exception as e:
-            
             pass
+            # print(e)
     
     def update_music(self):
         try:
             
-            while  self.music_on:
+            while self.music_on:
                 
                 QtWidgets.QApplication.processEvents()    
                 try: 
@@ -254,12 +250,10 @@ class BRAIN_MUSIC_PLAYER(QtWidgets.QMainWindow):
                     self.mreference_plot = plot_refs[0]    
                 else:
                     self.mreference_plot.set_ydata(self.ydata)
-                    
-
-            
+                                
             self.mp.axes.yaxis.grid(True,linestyle='--')
             start, end = self.mp.axes.get_ylim()
-            self.mp.axes.yaxis.set_ticks(np.arange(start, end, 0.1))
+            self.mp.axes.yaxis.set_ticks(np.arange(start, end, 0.5))
             self.mp.axes.yaxis.set_major_formatter(ticker.FormatStrFormatter('%0.1f'))
             self.mp.axes.set_ylim( ymin=-1, ymax=1)        
 
@@ -268,7 +262,6 @@ class BRAIN_MUSIC_PLAYER(QtWidgets.QMainWindow):
             
             pass
 
-# www.pyshine.com
 class Worker(QtCore.QRunnable):
 
     def __init__(self, function, *args, **kwargs):
@@ -280,11 +273,17 @@ class Worker(QtCore.QRunnable):
     @pyqtSlot()
     def run(self):
 
-        self.function(*self.args, **self.kwargs)        
+        self.function(*self.args, **self.kwargs)     
+        
+if __name__ == '__main__':
 
-
-
-app = QtWidgets.QApplication(sys.argv)
-mainWindow = BRAIN_MUSIC_PLAYER()
-mainWindow.show()
-sys.exit(app.exec_())
+    stream_process = Process(target=live_matplot_funcs.sendingData)
+    stream_process.start()
+    
+    if stream_process.is_alive():
+        print("streaming data...")
+    
+    app = QtWidgets.QApplication(sys.argv)
+    mainWindow = BRAIN_MUSIC_PLAYER()
+    mainWindow.show()
+    sys.exit(app.exec_())
