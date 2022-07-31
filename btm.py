@@ -2,10 +2,11 @@ import numpy as np
 from pylsl import StreamInlet, resolve_byprop 
 from Process_Features.feature_extract import feature_extract
 from scipy.signal import butter, lfilter
+import csv
 
 class BTM:
     def __init__(self):
-        self.buffer_len = 5           ### length of the buffer (sec)
+        self.buffer_len = 20           ### length of the buffer (sec)
         self.freqs = 0                ### variable for input frequency
         self.data_chunk = 0.25        ### data chunk each time buffer is updated
 
@@ -56,18 +57,31 @@ class BTM:
         eeg_buffer = self.init_buffer(len(channels))
         try:
             while True:
-                eeg_data, timestamp = self.stream_in.pull_chunk(
-                    timeout=1, max_samples=int(self.data_chunk * self.freqs))
+                eeg_buffer = self.stream_update(channels)
+                # print(feature_extract(eeg_buffer))
+                print(eeg_buffer)
 
-                ch_data = np.array(eeg_data)[:, channels]
-                # print(ch_data)
-                eeg_buffer = self.update_buffer(eeg_buffer, ch_data)
-                print(feature_extract(eeg_buffer))
-                # print(eeg_buffer)
+                # Enable for generating sample data
+                # if eeg_buffer[0,0] != 0:
+                #     with open('eegs.csv', 'w', newline='') as csvfile:
+                #         for row in eeg_buffer:
+                #             print
+                #             spamwriter = csv.writer(csvfile, delimiter=' ')
+                #             spamwriter.writerow(row)
+                #     break
+
 
         except Exception as e:
             print(e)
             print("Ending")
+
+    def stream_update(self, channels):
+        eeg_data, timestamp = self.stream_in.pull_chunk(
+            timeout=1, max_samples=int(self.data_chunk * self.freqs))
+
+        ch_data = np.array(eeg_data)[:, channels]
+        eeg_buffer = self.update_buffer(eeg_buffer, ch_data)
+        return eeg_buffer
 
     #### Helper functions
     def get_buffer_len(self):
@@ -111,5 +125,5 @@ if __name__ == "__main__":
     
     btm = BTM()
     stream_in, __ = btm.connect(5)
-    btm.run([0])
+    btm.run([0, 1, 2, 3])
 

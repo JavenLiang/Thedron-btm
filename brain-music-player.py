@@ -15,6 +15,8 @@ import matplotlib.pyplot as plt
 from pylsl import StreamInlet, resolve_byprop
 from multiprocessing import Process, Queue,set_start_method
 import live_matplot_funcs
+from os import path
+import btm
 
 class MplCanvas(FigureCanvas):
     def __init__(self, parent=None, width=5, height=4, dpi=100):
@@ -26,7 +28,8 @@ class MplCanvas(FigureCanvas):
 class BRAIN_MUSIC_PLAYER(QtWidgets.QMainWindow):
     def __init__(self):
         QtWidgets.QMainWindow.__init__(self)
-        self.ui = uic.loadUi('temp.ui',self)
+        ui_path = path.join('UI', 'temp.ui')
+        self.ui = uic.loadUi(path,self)
         self.resize(888, 600)
         
         # LSL stream
