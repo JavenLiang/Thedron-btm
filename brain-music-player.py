@@ -20,7 +20,7 @@ from pylsl import StreamInfo, StreamInlet, StreamOutlet, resolve_byprop
 from PyQt5 import QtCore, QtGui, QtWidgets, uic
 from PyQt5.QtCore import pyqtSlot
 
-import live_matplot_funcs
+import UI.live_matplot_funcs as live_matplot_funcs
 from os import path
 import btm
 
@@ -129,7 +129,7 @@ class BRAIN_MUSIC_PLAYER(QtWidgets.QMainWindow):
     def getAudio(self):
         QtWidgets.QApplication.processEvents()    
 
-        mid = MidiFile('../data/Never-Gonna-Give-You-Up-2.mid')
+        mid = MidiFile('data/Never-Gonna-Give-You-Up-2.mid')
         BUFFER_LEN = 5  # secs
         past_dur = 0  # secs
         past_msg_itr = 0
