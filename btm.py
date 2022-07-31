@@ -54,12 +54,12 @@ class BTM:
         input:
         channels: the channels to output (0, 1, 2, 3)
         """
-        eeg_buffer = self.init_buffer(len(channels))
+        self.init_buffer(len(channels))
         try:
             while True:
-                eeg_buffer = self.stream_update(channels)
+                self.stream_update(channels)
                 # print(feature_extract(eeg_buffer))
-                print(eeg_buffer)
+                print(self.eeg_buffer)
 
                 # Enable for generating sample data
                 # if eeg_buffer[0,0] != 0:
@@ -80,8 +80,8 @@ class BTM:
             timeout=1, max_samples=int(self.data_chunk * self.freqs))
 
         ch_data = np.array(eeg_data)[:, channels]
-        eeg_buffer = self.update_buffer(eeg_buffer, ch_data)
-        return eeg_buffer
+        self.eeg_buffer = self.update_buffer(self.eeg_buffer, ch_data)
+        return self.eeg_buffer
 
     #### Helper functions
     def get_buffer_len(self):

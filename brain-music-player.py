@@ -20,7 +20,7 @@ from pylsl import StreamInfo, StreamInlet, StreamOutlet, resolve_byprop
 from PyQt5 import QtCore, QtGui, QtWidgets, uic
 from PyQt5.QtCore import pyqtSlot
 
-import live_matplot_funcs
+from UI import live_matplot_funcs
 from os import path
 import btm
 
