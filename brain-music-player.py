@@ -38,7 +38,7 @@ class BRAIN_MUSIC_PLAYER(QtWidgets.QMainWindow):
     def __init__(self):
         QtWidgets.QMainWindow.__init__(self)
         ui_path = path.join('UI', 'temp.ui')
-        self.ui = uic.loadUi(path,self)
+        self.ui = uic.loadUi(ui_path,self)
         self.resize(888, 600)
         
         # LSL stream
