@@ -1,7 +1,6 @@
 matplotlib
 mido
 numpy
-pyaudio
 pygame
 pylsl
 PyQt5
