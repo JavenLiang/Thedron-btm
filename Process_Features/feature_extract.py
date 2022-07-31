@@ -8,7 +8,7 @@ credit:
     -streaming data code inspired by "Python IV workshop" from NeurTechAlberta 
     -low pass filter from https://www.adamsmith.haus/python/answers/how-to-create-a-low-pass-filter-in-python
 """
-def feature_extract(eeg_chunk, s_rate):
+def feature_extract(eeg_chunk):
     """receives a chunk of eeg data and performs basic preprocessing and feature extraction
     
     input:
@@ -23,24 +23,25 @@ def feature_extract(eeg_chunk, s_rate):
     from scipy.signal import butter, lfilter
     
     #%% init global vars
-    cutoff_freq = 55 #remove freq. above 55Hz, temp value
+    # cutoff_freq = 55 #remove freq. above 55Hz, temp value
         
     #%%% preprocess signal
     
     #if more than one channel, average them all
-    if len(eeg_chunk.shape) > 1:
+    if eeg_chunk.shape[1] > 1:
         eeg_chunk = eeg_chunk.mean(axis=1)
     
     #low pass filter
-    normalized_cutoff_freq = 2 * cutoff_freq / s_rate
-    numerator_coeffs, denominator_coeffs = butter(5, normalized_cutoff_freq) #hardcode 5 as order for now
-    feeg_chunk = lfilter(numerator_coeffs, denominator_coeffs, eeg_chunk)
+    # normalized_cutoff_freq = 2 * cutoff_freq / s_rate
+    # numerator_coeffs, denominator_coeffs = butter(5, normalized_cutoff_freq) #hardcode 5 as order for now
+    # feeg_chunk = lfilter(numerator_coeffs, denominator_coeffs, eeg_chunk)
     
     #remove eyeblink/jaw artifacts
     
     #%%% compute features
     #calc variance
-    eeg_var = np.var(feeg_chunk)
+    # eeg_var = np.var(feeg_chunk)
+    eeg_var = np.var(eeg_chunk)
     
     #normalize features(?)
     

@@ -1,6 +1,7 @@
 import numpy as np
 from pylsl import StreamInlet, resolve_byprop 
 from Process_Features.feature_extract import feature_extract
+from scipy.signal import butter, lfilter
 
 class BTM:
     def __init__(self):
@@ -92,6 +93,14 @@ class BTM:
         if new_data.ndim == 1:
             new_data = new_data.reshape(-1, data_buffer.shape[1])
 
+        #%% init global vars
+        cutoff_freq = 55 #remove freq. above 55Hz, temp value
+
+        #low pass filter
+        normalized_cutoff_freq = 2 * cutoff_freq / self.freqs
+        numerator_coeffs, denominator_coeffs = butter(5, normalized_cutoff_freq) #hardcode 5 as order for now
+        new_data = lfilter(numerator_coeffs, denominator_coeffs, new_data)
+
         new_buffer = np.concatenate((data_buffer, new_data), axis=0)
         new_buffer = new_buffer[new_data.shape[0]:, :]
 
@@ -101,6 +110,6 @@ class BTM:
 if __name__ == "__main__":
     
     btm = BTM()
-    stream_in, __ = btm.connect(1)
-    btm.run([0, 1, 2, 3])
+    stream_in, __ = btm.connect(5)
+    btm.run([0])
 
