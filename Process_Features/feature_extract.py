@@ -29,7 +29,7 @@ def feature_extract(eeg_chunk, s_rate):
     
     #if more than one channel, average them all
     if len(eeg_chunk.shape) > 1:
-        eeg_chunk = eeg_chunk.mean(axes=1)
+        eeg_chunk = eeg_chunk.mean(axis=1)
     
     #low pass filter
     normalized_cutoff_freq = 2 * cutoff_freq / s_rate
