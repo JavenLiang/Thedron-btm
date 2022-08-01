@@ -92,7 +92,7 @@ class BRAIN_MUSIC_PLAYER(QtWidgets.QMainWindow):
         self.mp = MplCanvas(self, width=5, height=1.5, dpi=100)
         self.ui.gridLayout.addWidget(self.mp, 2, 0, 1, 1)
         self.mreference_plot = None
-        self.mbuffer = []
+        self.mbuffer = [0] * 20
         
         self.plotdata =  np.zeros(500)
         self.musicdata = np.zeros((500,500))
@@ -102,7 +102,7 @@ class BRAIN_MUSIC_PLAYER(QtWidgets.QMainWindow):
         self.music_timer.setInterval(0) #msec
         self.music_timer.timeout.connect(self.update_music)
         self.music_timer.start()
-        self.mdata=[0]
+        # self.mdata=[0]
         # self.feature = self.features_list[0]
         
         # data plot timer
@@ -205,8 +205,7 @@ class BRAIN_MUSIC_PLAYER(QtWidgets.QMainWindow):
                 # ab_ratio = feats['alpha'] / feats['beta']
                 # print(ab_ratio)
             
-            if len(self.mbuffer) > 20:
-                self.mbuffer.pop(0)
+            self.mbuffer.pop(0)
             self.mbuffer.append(modifier)
 
             self.label_3.setText(str(modifier))
