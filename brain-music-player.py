@@ -106,6 +106,7 @@ class BRAIN_MUSIC_PLAYER(QtWidgets.QMainWindow):
         self.music_timer.start()
         self.mdata=[0]
         # self.feature = self.features_list[0]
+        self.ymax = 1
         
         # data plot timer
         self.timer = QtCore.QTimer()
@@ -465,7 +466,10 @@ class BRAIN_MUSIC_PLAYER(QtWidgets.QMainWindow):
             # self.mp.axes.yaxis.set_ticks(np.arange(start, end, 0.5))
             # self.mp.axes.yaxis.set_major_formatter(ticker.FormatStrFormatter('%0.1f'))
             self.mp.axes.xlabel("Time(s)")
-            self.mp.axes.set_ylim( ymin=-1, ymax=10)        
+            ymax_plot = max(self.mbuffer)
+            if self.ymax < ymax_plot:
+                self.ymax = ymax_plot + 1
+            self.mp.axes.set_ylim( ymin=-1, ymax=self.ymax)        
             self.mp.draw()
         except Exception as e:
             
