@@ -53,7 +53,9 @@ class MplCanvas(FigureCanvas):
 # Music Player Class
 class BRAIN_MUSIC_PLAYER(QtWidgets.QMainWindow):
     def __init__(self):
-        
+        """
+        Main frontend object for the application
+        """
         QtWidgets.QMainWindow.__init__(self)
         
         # Loading the UI file
@@ -277,7 +279,14 @@ class BRAIN_MUSIC_PLAYER(QtWidgets.QMainWindow):
 
 
     def start_music(self):
-        
+        """
+        Initializing the variables for plotting feature plot
+
+        Returns
+        -------
+        None.
+
+        """
         self.pushButton.setEnabled(False)
         self.mp.axes.clear()
         self.music_on = True
@@ -296,7 +305,7 @@ class BRAIN_MUSIC_PLAYER(QtWidgets.QMainWindow):
 
         """
         self.music_on = False
-        self.mbuffer = []
+        self.mbuffer = [0] * 20
         self.mq = Queue(maxsize=self.CHUNK)
         # with self.mq.mutex:
         #     self.mq.queue.clear()
@@ -321,6 +330,11 @@ class BRAIN_MUSIC_PLAYER(QtWidgets.QMainWindow):
         self.getData()
 
     def update_feature(self,value):
+        """
+        Update the feature selected for applying to music
+
+        input: value of selected feature
+        """
         self.feature = self.features_list.index(value)
         print(self.feature)
         
@@ -343,22 +357,22 @@ class BRAIN_MUSIC_PLAYER(QtWidgets.QMainWindow):
             if button.isChecked():
                 self.btm.set_channel([0])
                 self.btm.init_buffer()
-                self.mbuffer = []
+                self.mbuffer = [0] * 20
         elif button.text() == "AF7":
             if button.isChecked():
                 self.btm.set_channel([1])
                 self.btm.init_buffer()
-                self.mbuffer = []
+                self.mbuffer = [0] * 20
         elif button.text() == "AF8":
             if button.isChecked():
                 self.btm.set_channel([2])
                 self.btm.init_buffer()
-                self.mbuffer = []
+                self.mbuffer = [0] * 20
         elif button.text() == "TP10":
             if button.isChecked():
                 self.btm.set_channel([3])
                 self.btm.init_buffer()
-                self.mbuffer = []
+                self.mbuffer = [0] * 20
 
 
 
@@ -405,6 +419,14 @@ class BRAIN_MUSIC_PLAYER(QtWidgets.QMainWindow):
             # print(e)
     
     def update_music(self):
+        """
+        Function to plot the feature data
+
+        Returns
+        -------
+        None.
+
+        """
         # pass 
         try:
             while self.music_on:
@@ -449,6 +471,9 @@ class BRAIN_MUSIC_PLAYER(QtWidgets.QMainWindow):
 class Worker(QtCore.QRunnable):
 
     def __init__(self, function, *args, **kwargs):
+        """
+        Worker class for multiprocessing
+        """
         super(Worker, self).__init__()
         self.function = function
         self.args = args
