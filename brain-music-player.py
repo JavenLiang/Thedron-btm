@@ -426,7 +426,10 @@ class BRAIN_MUSIC_PLAYER(QtWidgets.QMainWindow):
                     plot_refs = self.mp.axes.plot( self.mplotdata, color=(0,1,0.29))
                     self.mreference_plot = plot_refs[0]    
                 else:
-                    self.mreference_plot.set_ydata(self.mplotdata)  
+                    self.mreference_plot.set_ydata(self.mplotdata) 
+
+                if self.music_on is False:
+                    break 
 
             self.mp.axes.yaxis.grid(True,linestyle='--')
             # start, end = self.mp.axes.get_ylim()
