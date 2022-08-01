@@ -50,6 +50,7 @@ class Ui_MainWindow(object):
         self.verticalLayout.setContentsMargins(0, 0, 0, 0)
         self.verticalLayout.setObjectName("verticalLayout")
         self.radioButton = QtWidgets.QRadioButton(self.verticalLayoutWidget)
+        self.radioButton.setChecked(True)
         self.radioButton.setObjectName("radioButton")
         self.verticalLayout.addWidget(self.radioButton)
         self.radioButton_2 = QtWidgets.QRadioButton(self.verticalLayoutWidget)

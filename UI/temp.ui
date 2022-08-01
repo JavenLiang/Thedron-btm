@@ -99,6 +99,9 @@
            <property name="text">
             <string>Channel 1</string>
            </property>
+           <property name="checked">
+            <bool>true</bool>
+           </property>
           </widget>
          </item>
          <item>

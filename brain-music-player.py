@@ -104,15 +104,16 @@ class BRAIN_MUSIC_PLAYER(QtWidgets.QMainWindow):
         self.pushButton.clicked.connect(self.start_music)
         self.pushButton_3.clicked.connect(self.stop_music)
         self.pushButton_2.clicked.connect(self.start_plot)
+        self.pushButton_4.clicked.connect(self.stop_plot)
         
         # Combobox Events
         self.comboBox.currentIndexChanged['QString'].connect(self.update_feature)
         
         # Checkbox Events
-        # self.radioButton.stateChanged.connect(self.update_channel)
-        # self.radioButton_2.stateChanged.connect(self.update_channel)
-        # self.radioButton_3.stateChanged.connect(self.update_channel)
-        # self.radioButton_4.stateChanged.connect(self.update_channel)
+        self.radioButton.toggled.connect(lambda:self.update_channel(self.radioButton))
+        self.radioButton_2.toggled.connect(lambda:self.update_channel(self.radioButton_2))
+        self.radioButton_3.toggled.connect(lambda:self.update_channel(self.radioButton_3))
+        self.radioButton_4.toggled.connect(lambda:self.update_channel(self.radioButton_4))
 
     def getData(self):
         QtWidgets.QApplication.processEvents()    
@@ -121,7 +122,7 @@ class BRAIN_MUSIC_PLAYER(QtWidgets.QMainWindow):
         while(self.plot_on):
             QtWidgets.QApplication.processEvents()    
             # samples,time = self.inlet.pull_chunk(timeout=.5, max_samples=CHUNK)
-            samples = self.btm.stream_update([0])
+            samples = self.btm.stream_update()
             print(samples)
             self.pq.put_nowait(samples)
             
@@ -213,7 +214,7 @@ class BRAIN_MUSIC_PLAYER(QtWidgets.QMainWindow):
         self.pushButton.setEnabled(True)
         
     def start_plot(self):
-        self.btm.init_buffer(1)
+        self.btm.init_buffer()
 
         self.pushButton_2.setEnabled(False)
         self.canvas.axes.clear()
@@ -240,6 +241,14 @@ class BRAIN_MUSIC_PLAYER(QtWidgets.QMainWindow):
         # with self.mq.mutex:
         #     self.mq.queue.clear()
         
+    def stop_plot(self):
+        
+        self.plot_on = False
+        self.reinit_plot()
+
+    def reinit_plot(self):
+        self.btm.init_buffer()
+        self.pdata = [0]
 
     def start_music_stream(self):
         self.getAudio()
@@ -251,11 +260,30 @@ class BRAIN_MUSIC_PLAYER(QtWidgets.QMainWindow):
         self.feature = self.features_list.index(value)
         print(self.feature)
         
-    def update_channel(self,state):
-        if state == QtCore.Qt.Checked:
-            print('Checked')
-        else:
-            print('Unchecked')
+
+    def update_channel(self,button):
+        if button.text() == "radioButton":
+            if button.isCheck():
+                print(button.text())
+                self.btm.set_channel([0])
+                self.reinit_plot()
+        elif button.text() == "radioButton_2":
+            if button.isCheck():
+                print(button.text())
+                self.btm.set_channel([1])
+                self.reinit_plot()
+        elif button.text() == "radioButton_3":
+            if button.isCheck():
+                print(button.text())
+                self.btm.set_channel([2])
+                self.reinit_plot()
+        elif button.text() == "radioButton_4":
+            if button.isCheck():
+                print(button.text())
+                self.btm.set_channel([3])
+                self.reinit_plot()
+
+
 
     def update_plot(self):
         try:
@@ -281,6 +309,9 @@ class BRAIN_MUSIC_PLAYER(QtWidgets.QMainWindow):
                     self.preference_plot = plot_refs[0]    
                 else:
                     self.preference_plot.set_ydata(self.plotdata)
+
+                if self.plot_on is False:
+                    break
                     
             self.canvas.axes.yaxis.grid(True,linestyle='--')
             start, end = self.canvas.axes.get_ylim()
