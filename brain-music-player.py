@@ -63,7 +63,7 @@ class BRAIN_MUSIC_PLAYER(QtWidgets.QMainWindow):
         self.pq = Queue(maxsize=self.CHUNK)
         self.mq = Queue(maxsize=self.CHUNK)
         
-        self.features_list= ['feature1','feature2','feature3']
+        self.features_list= ['None','Variance','Alpha/Beta']
         self.tmpfile = 'temp.wav'
         
         self.comboBox.addItems(self.features_list)
@@ -130,8 +130,8 @@ class BRAIN_MUSIC_PLAYER(QtWidgets.QMainWindow):
 
     def getAudio(self):
         QtWidgets.QApplication.processEvents()    
-
-        mid = MidiFile('data/Never-Gonna-Give-You-Up-2.mid')
+        midi_path = path.join('data', 'Never-Gonna-Give-You-Up-2.mid')
+        mid = MidiFile(midi_path)
         BUFFER_LEN = self.btm.buffer_len  # secs
         past_dur = 0  # secs
         past_msg_itr = 0
@@ -165,12 +165,21 @@ class BRAIN_MUSIC_PLAYER(QtWidgets.QMainWindow):
             samples = self.btm.eeg_buffer
             #check that samples contains values
 
-            feats = feature_extract.get_all_features(
-                self.btm.eeg_buffer,
-                self.btm.freqs
-            )
-            ab_ratio = feats['alpha'] / feats['beta']
-            print(ab_ratio)
+            modifier = 0
+            if self.feature == 1:
+                modifier = feature_extract.get_one_features(
+                    self.btm.eeg_buffer,
+                    "variance",
+                    self.btm.freqs
+                )
+            elif self.feature == 2:
+                modifier = feature_extract.get_one_features(
+                    self.btm.eeg_buffer,
+                    "a_to_b",
+                    self.btm.freqs
+                )
+                # ab_ratio = feats['alpha'] / feats['beta']
+                # print(ab_ratio)
 
             dur = past_dur
             subset_midi = deepcopy(meta_mid)
@@ -180,7 +189,7 @@ class BRAIN_MUSIC_PLAYER(QtWidgets.QMainWindow):
                 if msg.type == 'set_tempo':
                     tempo = msg.tempo
                 if not msg.is_meta:
-                    if msg.type in ('note_on', 'note_off'):
+                    if msg.type in ('note_on', 'note_off') and self.feature != 0:
                         msg.velocity  # ranges from 0-127
                         # dev = np.random.normal(scale=var)
                         # subset_midi.tracks[0].append(Message(
@@ -189,7 +198,7 @@ class BRAIN_MUSIC_PLAYER(QtWidgets.QMainWindow):
                         #     pitch=round(min(max(dev, LOW), HIGH)),
                         #     time=msg.time
                         # ))
-                        msg.velocity = (0*round(ab_ratio)) % HIGH # round(min(max(dev + msg.velocity, LOW), HIGH))
+                        msg.velocity = (0*round(modifier)) % HIGH # round(min(max(dev + msg.velocity, LOW), HIGH))
                     # https://music.stackexchange.com/questions/86241/how-can-i-split-a-midi-file-programatically
                     curr_time = tick2second(msg.time, mid.ticks_per_beat, tempo)
                     if dur + curr_time - past_dur > BUFFER_LEN:
@@ -253,7 +262,7 @@ class BRAIN_MUSIC_PLAYER(QtWidgets.QMainWindow):
 
     def update_feature(self,value):
         self.feature = self.features_list.index(value)
-        # print(self.feature)
+        print(self.feature)
         
 
     def update_channel(self,button):
