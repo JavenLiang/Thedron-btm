@@ -469,7 +469,8 @@ class BRAIN_MUSIC_PLAYER(QtWidgets.QMainWindow):
             ymax_plot = max(self.mbuffer)
             if self.ymax < ymax_plot:
                 self.ymax = ymax_plot + 1
-            self.mp.axes.set_ylim( ymin=-1, ymax=self.ymax)        
+            self.mp.axes.set_ylim( ymin=-1, ymax=self.ymax) 
+            self.mp.axes.set_set_yscale('log')       
             self.mp.draw()
         except Exception as e:
             
