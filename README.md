@@ -3,6 +3,7 @@
 ## Installation
 
 ```bash
+conda install -c conda-forge liblsl
 $ pip install -r requirements.txt
 ```
 

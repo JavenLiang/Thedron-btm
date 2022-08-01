@@ -1,3 +1,4 @@
+#%% Importing libraries
 import queue
 import sys
 import time
@@ -13,7 +14,7 @@ from matplotlib.backends.backend_qt5agg import (
 )
 from matplotlib.figure import Figure
 from mido import MidiFile, tick2second, Message
-from PyQt5 import QtCore, QtGui, QtWidgets, uic
+from PyQt5 import QtCore, QtWidgets, uic
 from PyQt5.QtCore import pyqtSlot
 
 import UI.live_matplot_funcs as live_matplot_funcs
@@ -22,33 +23,45 @@ from os import path
 from btm import BTM
 
 matplotlib.use('Qt5Agg')
-
-
+#%% 
+# Plotting Class using Matplot
 class MplCanvas(FigureCanvas):
     def __init__(self, parent=None, width=5, height=4, dpi=100):
+        """
+        Adding the matplotlib.pyplot plot to the widget in the UI
+        Parameters
+        ----------
+        parent : instance, required
+            Class Instance. The default is None.
+        width : INT, optional
+            The width of the plot in inches. The default is 5.
+        height : INT, optional
+            The height of the plot in inches. The default is 4.
+        dpi : INT, optional
+            The resolution of the figure in dots-per-inch. The default is 100.
+
+        Returns
+        -------
+        Matplot Figure
+
+        """
         fig = Figure(figsize=(width, height), dpi=dpi)
         self.axes = fig.add_subplot(111)
         super(MplCanvas, self).__init__(fig)
         fig.tight_layout()
 
+# Music Player Class
 class BRAIN_MUSIC_PLAYER(QtWidgets.QMainWindow):
     def __init__(self):
+        
         QtWidgets.QMainWindow.__init__(self)
+        
+        # Loading the UI file
         ui_path = path.join('UI', 'temp.ui')
         self.ui = uic.loadUi(ui_path,self)
         self.resize(888, 600)
         
-        # # LSL stream
-        # #get and print list of detected lsl streams
-        # streams = resolve_byprop('type', 'EEG', timeout=2)
-        # print(streams)
-        # #choose the stream we want, since there is only one it'll be the first
-        # stream = streams[0]
-        # #number of samples per second 
-        # sample_rate = 250 
-        # #the object that lets us pull data from the stream 
-        # self.inlet = StreamInlet(stream, max_chunklen = sample_rate)
-        
+        # Initializing the data streaming class
         self.btm = BTM()
         self.btm.connect(5)
 
@@ -57,9 +70,9 @@ class BRAIN_MUSIC_PLAYER(QtWidgets.QMainWindow):
         self.plot_on = False
 
         self.threadpool = QtCore.QThreadPool()    
-        # self.threadpool.setMaxThreadCount(2)
+        
         self.CHUNK = 250
-        # self.mq = queue.Queue(maxsize=self.CHUNK)
+        
         self.pq = Queue(maxsize=self.CHUNK)
         self.mq = Queue(maxsize=self.CHUNK)
         
@@ -108,7 +121,7 @@ class BRAIN_MUSIC_PLAYER(QtWidgets.QMainWindow):
         # Combobox Events
         self.comboBox.currentIndexChanged['QString'].connect(self.update_feature)
         
-        # Checkbox Events
+        # Radiobuttons for selecting the channels
         self.radioButton.toggled.connect(lambda:self.update_channel(self.radioButton))
         self.radioButton_2.toggled.connect(lambda:self.update_channel(self.radioButton_2))
         self.radioButton_3.toggled.connect(lambda:self.update_channel(self.radioButton_3))
@@ -118,12 +131,19 @@ class BRAIN_MUSIC_PLAYER(QtWidgets.QMainWindow):
         self.label_3.setText("0")
 
     def getData(self):
-        QtWidgets.QApplication.processEvents()    
-        CHUNK = self.CHUNK
+        """
+        Takes out samples of data from the Muse device and feed it into the queue
 
+        Returns
+        -------
+        None.
+
+        """
+        QtWidgets.QApplication.processEvents()    
+        # Starts taking in data when "start" button is pressed
         while(self.plot_on):
             QtWidgets.QApplication.processEvents()    
-            # samples,time = self.inlet.pull_chunk(timeout=.5, max_samples=CHUNK)
+            
             samples = self.btm.stream_update()
             # print("getData" , self.plot_on)
             self.pq.put_nowait(samples)
@@ -134,6 +154,14 @@ class BRAIN_MUSIC_PLAYER(QtWidgets.QMainWindow):
         self.pushButton_2.setEnabled(True)
 
     def getAudio(self):
+        """
+        Function to get the modified audio
+
+        Returns
+        -------
+        None.
+
+        """
         QtWidgets.QApplication.processEvents()    
         midi_path = path.join('data', 'Never-Gonna-Give-You-Up-2.mid')
         mid = MidiFile(midi_path)
@@ -241,6 +269,14 @@ class BRAIN_MUSIC_PLAYER(QtWidgets.QMainWindow):
         self.pushButton.setEnabled(True)
         
     def start_plot(self):
+        """
+        Initializing the variables for plotting the live EEG stream
+
+        Returns
+        -------
+        None.
+
+        """
         self.btm.init_buffer()
 
         self.pushButton_2.setEnabled(False)
@@ -263,12 +299,27 @@ class BRAIN_MUSIC_PLAYER(QtWidgets.QMainWindow):
         self.music_timer.setInterval(0) #msec
             
     def stop_music(self):
-        
+        """
+        Function to stop playing the background music
+
+        Returns
+        -------
+        None.
+
+        """
         self.music_on = False
         # with self.mq.mutex:
         #     self.mq.queue.clear()
         
     def stop_plot(self):
+        """
+        Function to stop streaming the EEG activity
+
+        Returns
+        -------
+        None.
+
+        """
         self.plot_on = False
         self.btm.init_buffer()
         self.mbuffer = []
@@ -285,6 +336,19 @@ class BRAIN_MUSIC_PLAYER(QtWidgets.QMainWindow):
         
 
     def update_channel(self,button):
+        """
+        Function to update the channel based on selection of specific radiobutton
+
+        Parameters
+        ----------
+        button : PyQT RadioButton
+            DESCRIPTION.
+
+        Returns
+        -------
+        None.
+
+        """
         if button.text() == "TP9":
             if button.isChecked():
                 self.btm.set_channel([0])
@@ -309,6 +373,14 @@ class BRAIN_MUSIC_PLAYER(QtWidgets.QMainWindow):
 
 
     def update_plot(self):
+        """
+        Function to plot the live streaming EEG data
+
+        Returns
+        -------
+        None.
+
+        """
         try:
             while self.plot_on:
                 
@@ -318,12 +390,6 @@ class BRAIN_MUSIC_PLAYER(QtWidgets.QMainWindow):
 
                 except queue.Empty:
                     break
-                
-                # chunk_data = np.vstack(self.pdata).T
-                # new_data = chunk_data[0] #get a shape (250,)
-                # self.plotdata = live_matplot_funcs.update_data_array(self.plotdata, new_data)
-                
-                # self.plotdata[ -len(new_data) : ] = new_data
 
                 # print("update_plot", self.plot_on)
                 self.plotdata = self.btm.eeg_buffer
@@ -340,6 +406,7 @@ class BRAIN_MUSIC_PLAYER(QtWidgets.QMainWindow):
             # start, end = self.canvas.axes.get_ylim()
             # self.canvas.axes.yaxis.set_ticks(np.arange(start, end, 0.5))
             # self.canvas.axes.yaxis.set_major_formatter(ticker.FormatStrFormatter('%0.1f'))
+
             self.canvas.axes.set_ylim( ymin=-10, ymax=10)        
 
             self.canvas.draw()
@@ -401,12 +468,7 @@ class Worker(QtCore.QRunnable):
 
 if __name__ == '__main__':
 
-    # stream_process = Process(target=live_matplot_funcs.sendingData)
-    # stream_process.start()
-    
-    # if stream_process.is_alive():
-    #     print("streaming data...")
-    
+    # Initializing the PyQT Application
     app = QtWidgets.QApplication(sys.argv)
     mainWindow = BRAIN_MUSIC_PLAYER()
     mainWindow.show()

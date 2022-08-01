@@ -7,7 +7,26 @@ import matplotlib as mp
 from multiprocessing import Process, Queue,set_start_method
 
 def generateNoisyWave(times, freq, amp, noise):
-    
+    """
+    Function to generate noisy sine waves to test the streaming process
+
+    Parameters
+    ----------
+    times : np.array
+        time vector for creating the noisy sine wave.
+    freq : INT
+        Frequency of the sine wave.
+    amp : INT or FLOAT
+        Amplitude of the wave.
+    noise : INT or FLOAT
+        Noise Amplitude.
+
+    Returns
+    -------
+    2D vector
+    Noisy sine wave  = Noise + sine wave.
+
+    """
     # This simplifies code later, this basically just creates our noise for us
     if(not isinstance(times, float)):
         noiseArray = noise * np.random.randn(len(times))
@@ -19,11 +38,14 @@ def generateNoisyWave(times, freq, amp, noise):
     return sineWave + noiseArray
 
 def sendingData():
-    '''
+    """
     Sends simulated EEG data to lsl stream
-    the alpha:beta ratio alternates high and low
-    every 5 seconds
-    '''
+    
+    Returns
+    -------
+    None.
+
+    """
     # initialize info for lsl stream
     info = StreamInfo('BioSemi', 'EEG', 1, 250, 'float32','ff05:113d:6fdd:2c17:a643:ffe2:1bd1:3cd2')
     # next make an outlet to push the eeg samples to
@@ -64,6 +86,23 @@ def sendingData():
         time.sleep(1/250) #wait 
         
 def update_data_array(data,new_data):
+    """
+    Feeds the new data to the existing data so the plotting can happen live as 
+    the data is being generated.
+
+    Parameters
+    ----------
+    data : NUMPY ARRAY
+        Existing data.
+    new_data : NUMPY ARRAY
+        New data being generated for plotting.
+
+    Returns
+    -------
+    data : NUMPY ARRAY
+        New data combining the existing and the new data.
+
+    """
     data = np.roll(data,-len(new_data)) #roll data to left
     data[-len(new_data):] = new_data #add new data to right
     return data
