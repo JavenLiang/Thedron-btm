@@ -424,7 +424,7 @@ class BRAIN_MUSIC_PLAYER(QtWidgets.QMainWindow):
                 # self.ydata = self.musicdata[:]
                 # self.mp.axes.set_facecolor((0,0,0))      
                 if self.mreference_plot is None:
-                    plot_refs = self.mp.axes.plot( self.ydata, color=(0,1,0.29))
+                    plot_refs = self.mp.axes.plot( self.mplotdata, color=(0,1,0.29))
                     self.mreference_plot = plot_refs[0]    
                 else:
                     self.mreference_plot.set_ydata(self.mplotdata)  
