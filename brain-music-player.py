@@ -199,7 +199,7 @@ class BRAIN_MUSIC_PLAYER(QtWidgets.QMainWindow):
             elif self.feature == 2:
                 modifier = feature_extract.get_one_feature(
                     self.btm.eeg_buffer,
-                    "a_to_b",
+                    "b_to_a",
                     self.btm.freqs
                 )
                 # ab_ratio = feats['alpha'] / feats['beta']
