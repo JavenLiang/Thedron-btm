@@ -79,6 +79,7 @@ class BRAIN_MUSIC_PLAYER(QtWidgets.QMainWindow):
         self.mp = MplCanvas(self, width=5, height=1.5, dpi=100)
         self.ui.gridLayout.addWidget(self.mp, 2, 0, 1, 1)
         self.mreference_plot = None
+        self.mbuffer = []
         
         self.plotdata =  np.zeros(500)
         self.musicdata = np.zeros((500,500))
@@ -175,6 +176,15 @@ class BRAIN_MUSIC_PLAYER(QtWidgets.QMainWindow):
                 )
                 # ab_ratio = feats['alpha'] / feats['beta']
                 # print(ab_ratio)
+            
+            if len(self.mbuffer) > 20:
+                self.mbuffer.pop(0)
+            self.mbuffer.append(modifier)
+            if self.mreference_plot is None:
+                plot_mrefs = self.mp.axes.plot(self.mbuffer, color=(0,1,0.29))
+                self.mreference_plot = plot_mrefs[0]    
+            else:
+                self.mreference_plot.set_ydata(self.mbuffer)
 
             self.label_3.setText(str(modifier))
             dur = past_dur
@@ -220,6 +230,14 @@ class BRAIN_MUSIC_PLAYER(QtWidgets.QMainWindow):
                 break
             time.sleep(BUFFER_LEN - (time.time() - tstart))
 
+        self.mp.axes.yaxis.grid(True,linestyle='--')
+        # start, end = self.mp.axes.get_ylim()
+        # self.canvas.axes.yaxis.set_ticks(np.arange(start, end, 0.5))
+        # self.canvas.axes.yaxis.set_major_formatter(ticker.FormatStrFormatter('%0.1f'))
+        self.mp.axes.set_ylim(ymin=-1, ymax=10)        
+
+        self.mp.draw()
+
         self.pushButton.setEnabled(True)
         
     def start_plot(self):
@@ -253,6 +271,7 @@ class BRAIN_MUSIC_PLAYER(QtWidgets.QMainWindow):
     def stop_plot(self):
         self.plot_on = False
         self.btm.init_buffer()
+        self.mbuffer = []
 
     def start_music_stream(self):
         self.getAudio()
@@ -270,18 +289,22 @@ class BRAIN_MUSIC_PLAYER(QtWidgets.QMainWindow):
             if button.isChecked():
                 self.btm.set_channel([0])
                 self.btm.init_buffer()
+                self.mbuffer = []
         elif button.text() == "AF7":
             if button.isChecked():
                 self.btm.set_channel([1])
                 self.btm.init_buffer()
+                self.mbuffer = []
         elif button.text() == "AF8":
             if button.isChecked():
                 self.btm.set_channel([2])
                 self.btm.init_buffer()
+                self.mbuffer = []
         elif button.text() == "TP10":
             if button.isChecked():
                 self.btm.set_channel([3])
                 self.btm.init_buffer()
+                self.mbuffer = []
 
 
 
@@ -314,7 +337,7 @@ class BRAIN_MUSIC_PLAYER(QtWidgets.QMainWindow):
                     break
                     
             self.canvas.axes.yaxis.grid(True,linestyle='--')
-            start, end = self.canvas.axes.get_ylim()
+            # start, end = self.canvas.axes.get_ylim()
             # self.canvas.axes.yaxis.set_ticks(np.arange(start, end, 0.5))
             # self.canvas.axes.yaxis.set_major_formatter(ticker.FormatStrFormatter('%0.1f'))
             self.canvas.axes.set_ylim( ymin=-10, ymax=10)        
