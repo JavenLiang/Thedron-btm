@@ -110,7 +110,7 @@ class BRAIN_MUSIC_PLAYER(QtWidgets.QMainWindow):
         self.timer.setInterval(30) #msec
         self.timer.timeout.connect(self.update_plot)
         self.timer.start()
-        self.pdata = [0]
+        # self.pdata = [0]
         
         # Button Events
         self.pushButton.clicked.connect(self.start_music)
@@ -208,11 +208,6 @@ class BRAIN_MUSIC_PLAYER(QtWidgets.QMainWindow):
             if len(self.mbuffer) > 20:
                 self.mbuffer.pop(0)
             self.mbuffer.append(modifier)
-            if self.mreference_plot is None:
-                plot_mrefs = self.mp.axes.plot(self.mbuffer, color=(0,1,0.29))
-                self.mreference_plot = plot_mrefs[0]    
-            else:
-                self.mreference_plot.set_ydata(self.mbuffer)
 
             self.label_3.setText(str(modifier))
             dur = past_dur
@@ -257,14 +252,6 @@ class BRAIN_MUSIC_PLAYER(QtWidgets.QMainWindow):
             if self.music_on is False:
                 break
             time.sleep(BUFFER_LEN - (time.time() - tstart))
-
-        self.mp.axes.yaxis.grid(True,linestyle='--')
-        # start, end = self.mp.axes.get_ylim()
-        # self.canvas.axes.yaxis.set_ticks(np.arange(start, end, 0.5))
-        # self.canvas.axes.yaxis.set_major_formatter(ticker.FormatStrFormatter('%0.1f'))
-        self.mp.axes.set_ylim(ymin=-1, ymax=10)        
-
-        self.mp.draw()
 
         self.pushButton.setEnabled(True)
         
@@ -385,11 +372,11 @@ class BRAIN_MUSIC_PLAYER(QtWidgets.QMainWindow):
             while self.plot_on:
                 
                 QtWidgets.QApplication.processEvents()    
-                try: 
-                    self.pdata = self.pq.get_nowait()
+                # try: 
+                #     self.pdata = self.pq.get_nowait()
 
-                except queue.Empty:
-                    break
+                # except queue.Empty:
+                #     break
 
                 # print("update_plot", self.plot_on)
                 self.plotdata = self.btm.eeg_buffer
@@ -415,42 +402,42 @@ class BRAIN_MUSIC_PLAYER(QtWidgets.QMainWindow):
             # print(e)
     
     def update_music(self):
-        pass
-        # try:
-            
-        #     while self.music_on:
+        # pass 
+        try:
+            while self.music_on:
                 
-        #         QtWidgets.QApplication.processEvents()    
-        #         try: 
-        #             # self.mdata = self.mq.get_nowait()
-        #             self.self.pdata = self.pq.get_nowait()
+                QtWidgets.QApplication.processEvents()    
+                # try: 
+                #     # self.mdata = self.mq.get_nowait()
+                #     self.self.pdata = self.pq.get_nowait()
                     
-        #         except queue.Empty:
-        #             break
+                # except queue.Empty:
+                #     break
 
-        #         chunk_data = np.vstack(self.pdata).T
-        #         new_data = chunk_data[0] #get a shape (250,)
+                # chunk_data = np.vstack(self.pdata).T
+                # new_data = chunk_data[0] #get a shape (250,)
                 
-        #         self.plotdata = live_matplot_funcs.update_data_array(self.plotdata, new_data)
+                self.mplotdata = self.mbuffer
                 
-        #         # self.musicdata = np.roll(self.musicdata, -shift,axis = 0)
-        #         # self.musicdata = self.mdata
-        #         # self.ydata = self.musicdata[:]
-        #         # self.mp.axes.set_facecolor((0,0,0))      
-        #         # if self.mreference_plot is None:
-        #         #     plot_refs = self.mp.axes.plot( self.ydata, color=(0,1,0.29))
-        #         #     self.mreference_plot = plot_refs[0]    
-        #         # else:
-        #         #     self.mreference_plot.set_ydata(self.ydata)         
-        #     # self.mp.axes.yaxis.grid(True,linestyle='--')
-        #     # start, end = self.mp.axes.get_ylim()
-        #     # self.mp.axes.yaxis.set_ticks(np.arange(start, end, 0.5))
-        #     # self.mp.axes.yaxis.set_major_formatter(ticker.FormatStrFormatter('%0.1f'))
-        #     # self.mp.axes.set_ylim( ymin=-1, ymax=1)        
-        #     # self.mp.draw()
-        # except Exception as e:
+                # self.musicdata = np.roll(self.musicdata, -shift,axis = 0)
+                # self.musicdata = self.mdata
+                # self.ydata = self.musicdata[:]
+                # self.mp.axes.set_facecolor((0,0,0))      
+                if self.mreference_plot is None:
+                    plot_refs = self.mp.axes.plot( self.ydata, color=(0,1,0.29))
+                    self.mreference_plot = plot_refs[0]    
+                else:
+                    self.mreference_plot.set_ydata(self.mplotdata)  
+
+            self.mp.axes.yaxis.grid(True,linestyle='--')
+            # start, end = self.mp.axes.get_ylim()
+            # self.mp.axes.yaxis.set_ticks(np.arange(start, end, 0.5))
+            # self.mp.axes.yaxis.set_major_formatter(ticker.FormatStrFormatter('%0.1f'))
+            self.mp.axes.set_ylim( ymin=-1, ymax=10)        
+            self.mp.draw()
+        except Exception as e:
             
-        #     pass
+            pass
 
 
 class Worker(QtCore.QRunnable):
