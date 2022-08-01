@@ -1,6 +1,5 @@
 import numpy as np
-from pylsl import StreamInlet, resolve_byprop 
-from Process_Features.feature_extract import feature_extract
+from pylsl import StreamInlet, resolve_byprop
 from scipy.signal import butter, lfilter
 import csv
 

@@ -163,4 +163,3 @@ def get_one_feature(eeg_chunk,feature,s_rate):
 
         #return band_power
         return band_power.mean() #for prototype, just return mean of all channels
-    
