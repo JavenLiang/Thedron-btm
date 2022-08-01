@@ -49,8 +49,8 @@ class BRAIN_MUSIC_PLAYER(QtWidgets.QMainWindow):
         # #the object that lets us pull data from the stream 
         # self.inlet = StreamInlet(stream, max_chunklen = sample_rate)
         
-        # self.btm = BTM()
-        # self.btm.connect(5)
+        self.btm = BTM()
+        self.btm.connect(5)
 
         #Flags
         self.music_on = False
