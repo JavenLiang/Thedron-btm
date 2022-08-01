@@ -241,13 +241,9 @@ class BRAIN_MUSIC_PLAYER(QtWidgets.QMainWindow):
         #     self.mq.queue.clear()
         
     def stop_plot(self):
-        
         self.plot_on = False
-        self.reinit_plot()
-
-    def reinit_plot(self):
         self.btm.init_buffer()
-        self.pdata = [0]
+
     def start_music_stream(self):
         self.getAudio()
         
@@ -264,22 +260,22 @@ class BRAIN_MUSIC_PLAYER(QtWidgets.QMainWindow):
             if button.isCheck():
                 print(button.text())
                 self.btm.set_channel([0])
-                self.reinit_plot()
+                self.btm.init_buffer()
         elif button.text() == "radioButton_2":
             if button.isCheck():
                 print(button.text())
                 self.btm.set_channel([1])
-                self.reinit_plot()
+                self.btm.init_buffer()
         elif button.text() == "radioButton_3":
             if button.isCheck():
                 print(button.text())
                 self.btm.set_channel([2])
-                self.reinit_plot()
+                self.btm.init_buffer()
         elif button.text() == "radioButton_4":
             if button.isCheck():
                 print(button.text())
                 self.btm.set_channel([3])
-                self.reinit_plot()
+                self.btm.init_buffer()
 
 
 
