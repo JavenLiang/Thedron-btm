@@ -3,4 +3,5 @@ mido
 numpy
 pygame
 pylsl
+muselsl
 PyQt5

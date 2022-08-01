@@ -119,7 +119,6 @@ class BTM:
         if eeg_buffer[0,0] != 0:
             with open('eegs.csv', 'w', newline='') as csvfile:
                 for row in eeg_buffer:
-                    print
                     spamwriter = csv.writer(csvfile, delimiter=' ')
                     spamwriter.writerow(row)
 

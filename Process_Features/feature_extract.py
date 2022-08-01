@@ -7,6 +7,7 @@ Created on Sat Jul 30 13:26:23 2022
 credit:
     -streaming data code inspired by "Python IV workshop" from NeurTechAlberta 
     -low pass filter from https://www.adamsmith.haus/python/answers/how-to-create-a-low-pass-filter-in-python
+    -power band calculations based on https://github.com/alexandrebarachant/muse-lsl/blob/master/examples/utils.py
 """
 #%% import libraries
 import numpy as np
@@ -54,6 +55,9 @@ def compute_band_powers(eegdata, fs):
     meanBeta = np.mean(PSD[ix_beta, :], axis=0)
     ix_gamma, = np.where((f >= 30) & (f < 55))
     meanGamma = np.mean(PSD[ix_gamma, :], axis=0)
+    
+    #normalize between 0 and 1 using known upper limits from test recordings
+    #meanDelta = 
 
     #gather results
     band_powers = np.concatenate((meanDelta, meanTheta, meanAlpha, meanBeta, meanGamma), axis=0)
@@ -62,15 +66,16 @@ def compute_band_powers(eegdata, fs):
     return band_powers.reshape(5,nbCh) #rehape so that each row is a different band
 
 
-def feature_extract(eeg_chunk, s_rate):
-    """receives a chunk of eeg data and performs basic preprocessing and feature extraction
+def get_all_features(eeg_chunk, s_rate):
+    """receives a chunk of eeg data and performs basic feature extraction
     
     input:
         eeg_chunk - numpy array of chunk of eeg data, columns as channels, rows as values in time
         s_rate - sampling rate of data
         
     output:
-        feature_dict - dictionary of features. Currently only "variance" 
+        feature_dict - dictionary of all features. 
+             i.e. "variance","alpha","beta","delta","theta","gamma"
     """
         
     #%% preprocess signal
@@ -110,3 +115,52 @@ def feature_extract(eeg_chunk, s_rate):
     
     return feature_dict
   
+    
+def get_one_feature(eeg_chunk,feature,s_rate):
+    """receives a chunk of eeg data and returns a specific feature
+    
+    input:
+        eeg_chunk - numpy array of chunk of eeg data, columns as channels, rows as values in time
+        feature - string, name of feature to compute, i.e. "variance","alpha","beta","delta","theta","gamma"
+        s_rate - sampling rate of data
+        
+    output:
+        numpy, single feature
+    """
+    
+    if feature == "variance":
+        eeg_var = np.var(eeg_chunk,axis=0) #variance of each channel (column)
+        eeg_var = eeg_var.mean() #for early prototpying, just average all channels variance   
+        return eeg_var
+    else: #prepare to compute band power
+        winSampleLength, nbCh = eeg_chunk.shape
+
+        #smooth via hamming window
+        w = np.hamming(winSampleLength) #hamming window with size of number of samples (should be close to normal buffersize if no transmission issues)
+        dataWinCentered = eeg_chunk - np.mean(eeg_chunk, axis=0)  # center by subtracting mean 
+        dataWinCenteredHam = (dataWinCentered.T * w).T #apply hamming window
+
+        #Fourier transform 
+        NFFT = next_power_2(winSampleLength) #helps speed up fft using a window with length of power of 2
+        Y = np.fft.fft(dataWinCenteredHam, n=NFFT, axis=0) / winSampleLength
+        PSD = 2 * np.abs(Y[0:int(NFFT / 2), :]) #power spectral density
+        f = s_rate / 2 * np.linspace(0, 1, int(NFFT / 2)) #freq. scale
+        
+        #find relevant freq. range for band
+        if feature == "delta":
+            ix, = np.where(f < 4) 
+        elif feature == "theta" :   
+            ix, = np.where((f >= 4) & (f <= 8))
+        elif feature == "alpha":    
+            ix, = np.where((f >= 8) & (f <= 12))
+        elif feature == "beta":    
+            ix, = np.where((f >= 12) & (f <= 30))    
+        elif feature == "gamma":    
+            ix, = np.where((f >= 30) & (f <= 55)) 
+        
+        #calc mean power in freq. band
+        band_power = np.mean(PSD[ix, :], axis=0)
+
+        #return band_power
+        return band_power.mean() #for prototype, just return mean of all channels
+    
