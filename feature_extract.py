@@ -161,7 +161,7 @@ def get_one_feature(eeg_chunk,feature,s_rate):
             ix_a, = np.where((f >= 8) & (f <= 12))
             band_power_a = np.mean(PSD[ix_a, :], axis=0)
             ix_b, = np.where((f >= 12) & (f <= 30)) 
-            band_power_b = np.mean(PSD[ix_a, :], axis=0)
+            band_power_b = np.mean(PSD[ix_b, :], axis=0)
             return band_power_a.mean()/band_power_b.mean()
 
         #calc mean power in freq. band
