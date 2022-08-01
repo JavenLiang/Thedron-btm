@@ -89,7 +89,7 @@ class BRAIN_MUSIC_PLAYER(QtWidgets.QMainWindow):
         self.music_timer.timeout.connect(self.update_music)
         self.music_timer.start()
         self.mdata=[0]
-        self.feature = self.features_list[0]
+        # self.feature = self.features_list[0]
         
         # data plot timer
         self.timer = QtCore.QTimer()
@@ -158,13 +158,13 @@ class BRAIN_MUSIC_PLAYER(QtWidgets.QMainWindow):
             tstart = time.time()
 
             modifier = 0
-            if self.feature == "1":
+            if self.feature == 1:
                 modifier = feature_extract.get_one_feature(
                     self.btm.eeg_buffer,
                     "variance",
                     self.btm.freqs
                 )
-            elif self.feature == "2":
+            elif self.feature == 2:
                 modifier = feature_extract.get_one_feature(
                     self.btm.eeg_buffer,
                     "a_to_b",
@@ -181,7 +181,7 @@ class BRAIN_MUSIC_PLAYER(QtWidgets.QMainWindow):
                 if msg.type == 'set_tempo':
                     tempo = msg.tempo
                 if not msg.is_meta:
-                    if msg.type in ('note_on', 'note_off') and self.feature != "0":
+                    if msg.type in ('note_on', 'note_off') and self.feature > 0:
                         msg.velocity  # ranges from 0-127
                         # dev = np.random.normal(scale=var)
                         # subset_midi.tracks[0].append(Message(
@@ -190,15 +190,19 @@ class BRAIN_MUSIC_PLAYER(QtWidgets.QMainWindow):
                         #     pitch=round(min(max(dev, LOW), HIGH)),
                         #     time=msg.time
                         # ))
-                        msg.velocity = (100*round(modifier)) % HIGH # round(min(max(dev + msg.velocity, LOW), HIGH))
+                        mod = ('velocity', 'note')[1]
+                        if mod == 'velocity':
+                            msg.velocity = (100*round(modifier)) % HIGH
+                        elif mod == 'note':
+                            msg.note = msg.note + round(modifier) % HIGH
+                            # round(min(max(dev + msg.velocity, LOW), HIGH))
                     # https://music.stackexchange.com/questions/86241/how-can-i-split-a-midi-file-programatically
                     curr_time = tick2second(msg.time, mid.ticks_per_beat, tempo)
                     if dur + curr_time - past_dur > BUFFER_LEN:
                         past_dur = dur
                         break
                     dur += curr_time
-                    if dur >= past_dur:
-                        subset_midi.tracks[0].append(msg)
+                    subset_midi.tracks[0].append(msg)
             subset_midi.tracks[0].append(mid.tracks[0][-1])
 
             bytestream = BytesIO()
