@@ -336,6 +336,7 @@ class BRAIN_MUSIC_PLAYER(QtWidgets.QMainWindow):
         input: value of selected feature
         """
         self.feature = self.features_list.index(value)
+        self.mbuffer = [0] * 20
         print(self.feature)
         
 
