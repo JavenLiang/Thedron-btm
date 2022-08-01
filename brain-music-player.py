@@ -321,6 +321,7 @@ class BRAIN_MUSIC_PLAYER(QtWidgets.QMainWindow):
         """
         self.plot_on = False
         self.btm.init_buffer()
+        self.mbuffer = [0] * 20
         self.pq = Queue(maxsize=self.CHUNK)
 
     def start_music_stream(self):
