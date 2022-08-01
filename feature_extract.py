@@ -169,5 +169,6 @@ def get_one_feature(eeg_chunk,feature,s_rate):
 
         #calc mean power in freq. band
         band_power = np.mean(PSD[ix, :], axis=0)
+        band_power = np.log10(band_power)
         #return band_power
         return band_power.mean() #for prototype, just return mean of all channels
