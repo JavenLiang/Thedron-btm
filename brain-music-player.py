@@ -49,8 +49,8 @@ class BRAIN_MUSIC_PLAYER(QtWidgets.QMainWindow):
         # #the object that lets us pull data from the stream 
         # self.inlet = StreamInlet(stream, max_chunklen = sample_rate)
         
-        self.btm = BTM()
-        self.btm.connect(5)
+        # self.btm = BTM()
+        # self.btm.connect(5)
 
         #Flags
         self.music_on = False
@@ -64,6 +64,7 @@ class BRAIN_MUSIC_PLAYER(QtWidgets.QMainWindow):
         self.mq = Queue(maxsize=self.CHUNK)
         
         self.features_list= ['None','Variance','Alpha/Beta']
+        self.feature = 0
         self.tmpfile = 'temp.wav'
         
         self.comboBox.addItems(self.features_list)
