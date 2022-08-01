@@ -4,6 +4,9 @@ from scipy.signal import butter, lfilter
 import csv
 
 class BTM:
+    """
+    Object interfacing with MUSE 2 data stream, also maintain an eeg buffer
+    """
     def __init__(self):
         self.buffer_len = 5           ### length of the buffer (sec)
         self.freqs = 0                ### variable for input frequency
@@ -49,7 +52,7 @@ class BTM:
 
     def run(self):
         """
-        Running the application
+        Running the application as simplistic terminal application
         """
         self.init_buffer()
         try:
@@ -67,6 +70,9 @@ class BTM:
             print("Ending")
 
     def stream_update(self):
+        """
+        One time update to the eeg buffer
+        """
         eeg_data, timestamp = self.stream_in.pull_chunk(
             timeout=1, max_samples=int(self.data_chunk * self.freqs))
 
@@ -115,6 +121,11 @@ class BTM:
         return new_buffer
         
     def buffer_to_file(self, eeg_buffer):
+        """
+        Output buffer as csv file
+
+        input: eeg_buffer: buffer to be output as csv
+        """
         if eeg_buffer[0,0] != 0:
             with open('eegs.csv', 'w', newline='') as csvfile:
                 for row in eeg_buffer:
