@@ -97,7 +97,7 @@
          <item>
           <widget class="QRadioButton" name="radioButton">
            <property name="text">
-            <string>Channel 1</string>
+            <string>TP9</string>
            </property>
            <property name="checked">
             <bool>true</bool>
@@ -107,21 +107,21 @@
          <item>
           <widget class="QRadioButton" name="radioButton_2">
            <property name="text">
-            <string>Channel 2</string>
+            <string>AF7</string>
            </property>
           </widget>
          </item>
          <item>
           <widget class="QRadioButton" name="radioButton_3">
            <property name="text">
-            <string>Channel 3</string>
+            <string>AF8</string>
            </property>
           </widget>
          </item>
          <item>
           <widget class="QRadioButton" name="radioButton_4">
            <property name="text">
-            <string>Channel 4</string>
+            <string>TP10</string>
            </property>
           </widget>
          </item>
