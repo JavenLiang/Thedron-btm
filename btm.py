@@ -72,7 +72,7 @@ class BTM:
 
         ch_data = np.array(eeg_data)[:, self.channel]
         self.eeg_buffer = self.update_buffer(self.eeg_buffer, ch_data)
-        print(self.eeg_buffer)
+        # print(self.eeg_buffer)
         return self.eeg_buffer
 
 
