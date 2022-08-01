@@ -49,8 +49,8 @@ class BRAIN_MUSIC_PLAYER(QtWidgets.QMainWindow):
         # #the object that lets us pull data from the stream 
         # self.inlet = StreamInlet(stream, max_chunklen = sample_rate)
         
-        self.btm = BTM()
-        self.btm.connect(5)
+        # self.btm = BTM()
+        # self.btm.connect(5)
 
         #Flags
         self.music_on = False
@@ -113,6 +113,9 @@ class BRAIN_MUSIC_PLAYER(QtWidgets.QMainWindow):
         self.radioButton_3.toggled.connect(lambda:self.update_channel(self.radioButton_3))
         self.radioButton_4.toggled.connect(lambda:self.update_channel(self.radioButton_4))
 
+        # feature value
+        self.label_3.setText("0")
+
     def getData(self):
         QtWidgets.QApplication.processEvents()    
         CHUNK = self.CHUNK
@@ -173,6 +176,7 @@ class BRAIN_MUSIC_PLAYER(QtWidgets.QMainWindow):
                 # ab_ratio = feats['alpha'] / feats['beta']
                 # print(ab_ratio)
 
+            self.label_3.setText(str(modifier))
             dur = past_dur
             subset_midi = deepcopy(meta_mid)
             for itr in range(past_msg_itr, tot_msgs):
