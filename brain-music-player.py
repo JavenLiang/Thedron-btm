@@ -49,8 +49,8 @@ class BRAIN_MUSIC_PLAYER(QtWidgets.QMainWindow):
         # #the object that lets us pull data from the stream 
         # self.inlet = StreamInlet(stream, max_chunklen = sample_rate)
         
-        # self.btm = BTM()
-        # self.btm.connect(5)
+        self.btm = BTM()
+        self.btm.connect(5)
 
         #Flags
         self.music_on = False
@@ -146,12 +146,6 @@ class BRAIN_MUSIC_PLAYER(QtWidgets.QMainWindow):
             else:
                 break
 
-        #the max number of samples pulled from lsl stream
-        CHUNK = self.btm.freqs*BUFFER_LEN
-
-        buff = np.zeros(self.btm.freqs*BUFFER_LEN)*8 #init array that will hold 2 seconds (500 samples) of eeg data to display
-        #init color map which converts a numeric value to rgb color, the range of the value is between 0 and 1
-
         pygame.mixer.init()
 
         tot_msgs = len(mid.tracks[0])
@@ -162,9 +156,6 @@ class BRAIN_MUSIC_PLAYER(QtWidgets.QMainWindow):
             
             QtWidgets.QApplication.processEvents()
             tstart = time.time()
-            #pull a chunk of eeg data from lsl stream
-            samples = self.btm.eeg_buffer
-            #check that samples contains values
 
             modifier = 0
             if self.feature == "1":
@@ -199,7 +190,7 @@ class BRAIN_MUSIC_PLAYER(QtWidgets.QMainWindow):
                         #     pitch=round(min(max(dev, LOW), HIGH)),
                         #     time=msg.time
                         # ))
-                        msg.velocity = (0*round(modifier)) % HIGH # round(min(max(dev + msg.velocity, LOW), HIGH))
+                        msg.velocity = (100*round(modifier)) % HIGH # round(min(max(dev + msg.velocity, LOW), HIGH))
                     # https://music.stackexchange.com/questions/86241/how-can-i-split-a-midi-file-programatically
                     curr_time = tick2second(msg.time, mid.ticks_per_beat, tempo)
                     if dur + curr_time - past_dur > BUFFER_LEN:
@@ -217,9 +208,9 @@ class BRAIN_MUSIC_PLAYER(QtWidgets.QMainWindow):
             pygame.mixer.music.play()
             if past_msg_itr >= tot_msgs:
                 self.music_on = False
-            time.sleep(BUFFER_LEN - (time.time() - tstart))
             if self.music_on is False:
                 break
+            time.sleep(BUFFER_LEN - (time.time() - tstart))
 
         self.pushButton.setEnabled(True)
         
