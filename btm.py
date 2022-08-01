@@ -75,7 +75,7 @@ class BTM:
 
         ch_data = np.array(eeg_data)[:, channels]
         self.eeg_buffer = self.update_buffer(self.eeg_buffer, ch_data)
-        print(self.eeg_buffer)
+        # print(self.eeg_buffer)
         return self.eeg_buffer
 
 
@@ -120,7 +120,6 @@ class BTM:
         if eeg_buffer[0,0] != 0:
             with open('eegs.csv', 'w', newline='') as csvfile:
                 for row in eeg_buffer:
-                    print
                     spamwriter = csv.writer(csvfile, delimiter=' ')
                     spamwriter.writerow(row)
 

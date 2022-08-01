@@ -15,7 +15,7 @@ from matplotlib.backends.backend_qt5agg import (
     FigureCanvasQTAgg as FigureCanvas
 )
 from matplotlib.figure import Figure
-from mido import MidiFile, tick2second
+from mido import MidiFile, tick2second, Message
 from pylsl import StreamInfo, StreamInlet, StreamOutlet, resolve_byprop
 from PyQt5 import QtCore, QtGui, QtWidgets, uic
 from PyQt5.QtCore import pyqtSlot
@@ -87,7 +87,7 @@ class BRAIN_MUSIC_PLAYER(QtWidgets.QMainWindow):
         
         # music timer
         self.music_timer = QtCore.QTimer()
-        self.music_timer.setInterval(30) #msec
+        self.music_timer.setInterval(0) #msec
         self.music_timer.timeout.connect(self.update_music)
         self.music_timer.start()
         self.mdata=[0]
@@ -122,7 +122,7 @@ class BRAIN_MUSIC_PLAYER(QtWidgets.QMainWindow):
             QtWidgets.QApplication.processEvents()    
             # samples,time = self.inlet.pull_chunk(timeout=.5, max_samples=CHUNK)
             samples = self.btm.stream_update([0])
-            print(samples)
+            # print(samples)
             self.pq.put_nowait(samples)
             
             if self.plot_on is False:
@@ -133,8 +133,8 @@ class BRAIN_MUSIC_PLAYER(QtWidgets.QMainWindow):
     def getAudio(self):
         QtWidgets.QApplication.processEvents()    
 
-        mid = MidiFile('data/Never-Gonna-Give-You-Up-2.mid')
-        BUFFER_LEN = 5  # secs
+        mid = MidiFile('data/Never_Gonna_Give_You_Up.mid')
+        BUFFER_LEN = self.btm.buffer_len  # secs
         past_dur = 0  # secs
         past_msg_itr = 0
         tempo = None
@@ -148,10 +148,9 @@ class BRAIN_MUSIC_PLAYER(QtWidgets.QMainWindow):
                 break
 
         #the max number of samples pulled from lsl stream
-        srate = 250
-        CHUNK = srate*BUFFER_LEN
+        CHUNK = self.btm.freqs*BUFFER_LEN
 
-        buff = np.zeros(srate*BUFFER_LEN)*8 #init array that will hold 2 seconds (500 samples) of eeg data to display
+        buff = np.zeros(self.btm.freqs*BUFFER_LEN)*8 #init array that will hold 2 seconds (500 samples) of eeg data to display
         #init color map which converts a numeric value to rgb color, the range of the value is between 0 and 1
 
         pygame.mixer.init()
@@ -159,54 +158,54 @@ class BRAIN_MUSIC_PLAYER(QtWidgets.QMainWindow):
         tot_msgs = len(mid.tracks[0])
         tstart = time.time()
         # time.sleep(BUFFER_LEN)
+        LOW, HIGH = -8192, 8191
         while(self.music_on):
             
             QtWidgets.QApplication.processEvents()
             tstart = time.time()
             #pull a chunk of eeg data from lsl stream
-            samples = self.plotdata
+            samples = self.btm.eeg_buffer
             #check that samples contains values
 
-            if len(samples) > 0:
-                #samples is a length <= 250 list of lists which contain one value of the eeg stream
-                #convert it to a shape (1,250) array (1 channel, 250 timesteps)
-                chunk_data = np.vstack(samples).T
-                channel_1 = chunk_data[0] #get a shape (250,) array of data from the first (and only) channel
+            std = np.std(samples, axis=0)[0]
 
-                #update data array
-                data = live_matplot_funcs.update_data_array(buff,channel_1)
+            dur = past_dur
+            subset_midi = deepcopy(meta_mid)
+            for itr in range(past_msg_itr, tot_msgs):
+                msg = mid.tracks[0][itr]
+                past_msg_itr += 1
+                if msg.type == 'set_tempo':
+                    tempo = msg.tempo
+                if (
+                    not msg.is_meta
+                ):
+                    if msg.type == 'note_on':
+                        msg.velocity  # ranges from 0-127
+                    # https://music.stackexchange.com/questions/86241/how-can-i-split-a-midi-file-programatically
+                    curr_time = tick2second(msg.time, mid.ticks_per_beat, tempo)
+                    if dur + curr_time - past_dur > BUFFER_LEN:
+                        past_dur = dur
+                        break
+                    dur += curr_time
+                    if dur >= past_dur:
+                        dev = np.random.normal(scale=std)
+                        subset_midi.tracks[0].append(Message(
+                            'pitchwheel',
+                            channel=0,
+                            pitch=round(min(max(dev, LOW), HIGH)),
+                            time=msg.time
+                        ))
+                        subset_midi.tracks[0].append(msg)
+            subset_midi.tracks[0].append(mid.tracks[0][-1])
 
-                dur = past_dur
-                subset_midi = deepcopy(meta_mid)
-                for itr in range(past_msg_itr, tot_msgs):
-                    msg = mid.tracks[0][itr]
-                    past_msg_itr += 1
-                    if msg.type == 'set_tempo':
-                        tempo = msg.tempo
-                    if (
-                        not msg.is_meta
-                    ):
-                        if msg.type == 'note_on':
-                            msg.velocity  # ranges from 0-127
-                            msg.velocity = np.clip((np.random.randint(-32, 32) + msg.velocity,), 30, 115)[0]
-                        # https://music.stackexchange.com/questions/86241/how-can-i-split-a-midi-file-programatically
-                        curr_time = tick2second(msg.time, mid.ticks_per_beat, tempo)
-                        if dur + curr_time - past_dur > BUFFER_LEN:
-                            past_dur = dur
-                            break
-                        dur += curr_time
-                        if dur >= past_dur:
-                            subset_midi.tracks[0].append(msg)
-                subset_midi.tracks[0].append(mid.tracks[0][-1])
-
-                bytestream = BytesIO()
-                subset_midi.save(file=bytestream)
-                bytestream.seek(0)
-                pygame.mixer.music.load(bytestream)
-                pygame.mixer.music.play()
-                if past_msg_itr >= tot_msgs:
-                    self.music_on = False
-                time.sleep(BUFFER_LEN - (time.time() - tstart))
+            bytestream = BytesIO()
+            subset_midi.save(file=bytestream)
+            bytestream.seek(0)
+            pygame.mixer.music.load(bytestream)
+            pygame.mixer.music.play()
+            if past_msg_itr >= tot_msgs:
+                self.music_on = False
+            time.sleep(BUFFER_LEN - (time.time() - tstart))
             if self.music_on is False:
                 break
 
@@ -232,14 +231,13 @@ class BRAIN_MUSIC_PLAYER(QtWidgets.QMainWindow):
         self.music_worker = Worker(self.start_music_stream, )
         self.threadpool.start(self.music_worker)    
         self.mreference_plot = None
-        self.music_timer.setInterval(30) #msec
+        self.music_timer.setInterval(0) #msec
             
     def stop_music(self):
         
         self.music_on = False
         # with self.mq.mutex:
         #     self.mq.queue.clear()
-        
 
     def start_music_stream(self):
         self.getAudio()
@@ -249,8 +247,8 @@ class BRAIN_MUSIC_PLAYER(QtWidgets.QMainWindow):
 
     def update_feature(self,value):
         self.feature = self.features_list.index(value)
-        print(self.feature)
-        
+        # print(self.feature)
+
     def update_channel(self,state):
         if state == QtCore.Qt.Checked:
             print('Checked')
@@ -265,19 +263,19 @@ class BRAIN_MUSIC_PLAYER(QtWidgets.QMainWindow):
                 QtWidgets.QApplication.processEvents()    
                 try: 
                     self.pdata = self.pq.get_nowait()
-                    
+
                 except queue.Empty:
                     break
                 
-                chunk_data = np.vstack(self.pdata).T
-                new_data = chunk_data[0] #get a shape (250,)
+                # chunk_data = np.vstack(self.pdata).T
+                # new_data = chunk_data[0] #get a shape (250,)
                 # self.plotdata = live_matplot_funcs.update_data_array(self.plotdata, new_data)
                 
                 # self.plotdata[ -len(new_data) : ] = new_data
 
-                self.plotdata = new_data
+                self.plotdata = self.btm.eeg_buffer
                 if self.preference_plot is None:
-                    plot_refs = self.canvas.axes.plot( self.plotdata, color=(0,1,0.29))
+                    plot_refs = self.canvas.axes.plot(self.plotdata, color=(0,1,0.29))
                     self.preference_plot = plot_refs[0]    
                 else:
                     self.preference_plot.set_ydata(self.plotdata)
