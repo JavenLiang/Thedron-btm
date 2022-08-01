@@ -120,7 +120,7 @@ class BRAIN_MUSIC_PLAYER(QtWidgets.QMainWindow):
             QtWidgets.QApplication.processEvents()    
             # samples,time = self.inlet.pull_chunk(timeout=.5, max_samples=CHUNK)
             samples = self.btm.stream_update()
-            print("getData" , self.plot_on)
+            # print("getData" , self.plot_on)
             self.pq.put_nowait(samples)
             
             if self.plot_on is False:
@@ -294,7 +294,7 @@ class BRAIN_MUSIC_PLAYER(QtWidgets.QMainWindow):
                 
                 # self.plotdata[ -len(new_data) : ] = new_data
 
-                print("update_plot", self.plot_on)
+                # print("update_plot", self.plot_on)
                 self.plotdata = self.btm.eeg_buffer
                 if self.preference_plot is None:
                     plot_refs = self.canvas.axes.plot(self.plotdata, color=(0,1,0.29))
