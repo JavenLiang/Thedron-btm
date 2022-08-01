@@ -166,13 +166,13 @@ class BRAIN_MUSIC_PLAYER(QtWidgets.QMainWindow):
             #check that samples contains values
 
             modifier = 0
-            if self.feature == 1:
+            if self.feature == "1":
                 modifier = feature_extract.get_one_feature(
                     self.btm.eeg_buffer,
                     "variance",
                     self.btm.freqs
                 )
-            elif self.feature == 2:
+            elif self.feature == "2":
                 modifier = feature_extract.get_one_feature(
                     self.btm.eeg_buffer,
                     "a_to_b",
@@ -189,7 +189,7 @@ class BRAIN_MUSIC_PLAYER(QtWidgets.QMainWindow):
                 if msg.type == 'set_tempo':
                     tempo = msg.tempo
                 if not msg.is_meta:
-                    if msg.type in ('note_on', 'note_off') and self.feature != 0:
+                    if msg.type in ('note_on', 'note_off') and self.feature != "0":
                         msg.velocity  # ranges from 0-127
                         # dev = np.random.normal(scale=var)
                         # subset_midi.tracks[0].append(Message(
