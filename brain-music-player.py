@@ -1,14 +1,11 @@
 import queue
 import sys
 import time
-import wave
 from copy import deepcopy
 from io import BytesIO
-from multiprocessing import Process, Queue, set_start_method
+from multiprocessing import Queue
 
 import matplotlib
-import matplotlib.pyplot as plt
-import matplotlib.ticker as ticker
 import numpy as np
 import pygame
 from matplotlib.backends.backend_qt5agg import (
@@ -16,11 +13,11 @@ from matplotlib.backends.backend_qt5agg import (
 )
 from matplotlib.figure import Figure
 from mido import MidiFile, tick2second, Message
-from pylsl import StreamInfo, StreamInlet, StreamOutlet, resolve_byprop
 from PyQt5 import QtCore, QtGui, QtWidgets, uic
 from PyQt5.QtCore import pyqtSlot
 
 import UI.live_matplot_funcs as live_matplot_funcs
+import feature_extract
 from os import path
 from btm import BTM
 
@@ -130,7 +127,7 @@ class BRAIN_MUSIC_PLAYER(QtWidgets.QMainWindow):
                 break
     
         self.pushButton_2.setEnabled(True)
-        
+
     def getAudio(self):
         QtWidgets.QApplication.processEvents()    
 
@@ -168,7 +165,12 @@ class BRAIN_MUSIC_PLAYER(QtWidgets.QMainWindow):
             samples = self.btm.eeg_buffer
             #check that samples contains values
 
-            std = np.std(samples, axis=0)[0]
+            feats = feature_extract.get_all_features(
+                self.btm.eeg_buffer,
+                self.btm.freqs
+            )
+            print(feats)
+            std = feats['gamma']
 
             dur = past_dur
             subset_midi = deepcopy(meta_mid)
