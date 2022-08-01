@@ -131,7 +131,7 @@ class BRAIN_MUSIC_PLAYER(QtWidgets.QMainWindow):
     def getAudio(self):
         QtWidgets.QApplication.processEvents()    
 
-        mid = MidiFile('data/Never_Gonna_Give_You_Up.mid')
+        mid = MidiFile('data/Never-Gonna-Give-You-Up-2.mid')
         BUFFER_LEN = self.btm.buffer_len  # secs
         past_dur = 0  # secs
         past_msg_itr = 0
@@ -156,7 +156,7 @@ class BRAIN_MUSIC_PLAYER(QtWidgets.QMainWindow):
         tot_msgs = len(mid.tracks[0])
         tstart = time.time()
         # time.sleep(BUFFER_LEN)
-        LOW, HIGH = -8192, 8191
+        LOW, HIGH = 0, 127
         while(self.music_on):
             
             QtWidgets.QApplication.processEvents()
@@ -169,8 +169,8 @@ class BRAIN_MUSIC_PLAYER(QtWidgets.QMainWindow):
                 self.btm.eeg_buffer,
                 self.btm.freqs
             )
-            print(feats)
-            std = feats['gamma']
+            ab_ratio = feats['alpha'] / feats['beta']
+            print(ab_ratio)
 
             dur = past_dur
             subset_midi = deepcopy(meta_mid)
@@ -179,11 +179,17 @@ class BRAIN_MUSIC_PLAYER(QtWidgets.QMainWindow):
                 past_msg_itr += 1
                 if msg.type == 'set_tempo':
                     tempo = msg.tempo
-                if (
-                    not msg.is_meta
-                ):
-                    if msg.type == 'note_on':
+                if not msg.is_meta:
+                    if msg.type in ('note_on', 'note_off'):
                         msg.velocity  # ranges from 0-127
+                        # dev = np.random.normal(scale=var)
+                        # subset_midi.tracks[0].append(Message(
+                        #     'pitchwheel',
+                        #     channel=0,
+                        #     pitch=round(min(max(dev, LOW), HIGH)),
+                        #     time=msg.time
+                        # ))
+                        msg.velocity = (0*round(ab_ratio)) % HIGH # round(min(max(dev + msg.velocity, LOW), HIGH))
                     # https://music.stackexchange.com/questions/86241/how-can-i-split-a-midi-file-programatically
                     curr_time = tick2second(msg.time, mid.ticks_per_beat, tempo)
                     if dur + curr_time - past_dur > BUFFER_LEN:
@@ -191,13 +197,6 @@ class BRAIN_MUSIC_PLAYER(QtWidgets.QMainWindow):
                         break
                     dur += curr_time
                     if dur >= past_dur:
-                        dev = np.random.normal(scale=std)
-                        subset_midi.tracks[0].append(Message(
-                            'pitchwheel',
-                            channel=0,
-                            pitch=round(min(max(dev, LOW), HIGH)),
-                            time=msg.time
-                        ))
                         subset_midi.tracks[0].append(msg)
             subset_midi.tracks[0].append(mid.tracks[0][-1])
 
