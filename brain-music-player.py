@@ -414,7 +414,7 @@ class BRAIN_MUSIC_PLAYER(QtWidgets.QMainWindow):
             # self.canvas.axes.yaxis.set_ticks(np.arange(start, end, 0.5))
             # self.canvas.axes.yaxis.set_major_formatter(ticker.FormatStrFormatter('%0.1f'))
             
-            self.canvas.axes.xlabel("Time")
+            # self.canvas.axes.xlabel("Time")
             self.canvas.axes.set_ylim( ymin=-10, ymax=10)        
 
             self.canvas.draw()
@@ -465,7 +465,7 @@ class BRAIN_MUSIC_PLAYER(QtWidgets.QMainWindow):
             # start, end = self.mp.axes.get_ylim()
             # self.mp.axes.yaxis.set_ticks(np.arange(start, end, 0.5))
             # self.mp.axes.yaxis.set_major_formatter(ticker.FormatStrFormatter('%0.1f'))
-            self.mp.axes.xlabel("Time(s)")
+            # self.mp.axes.xlabel("Time(s)")
             ymax_plot = max(self.mbuffer)
             if self.ymax < ymax_plot:
                 self.ymax = ymax_plot + 1
