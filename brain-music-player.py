@@ -119,7 +119,7 @@ class BRAIN_MUSIC_PLAYER(QtWidgets.QMainWindow):
         while(self.plot_on):
             QtWidgets.QApplication.processEvents()    
             # samples,time = self.inlet.pull_chunk(timeout=.5, max_samples=CHUNK)
-            samples = self.btm.stream_update([0])
+            samples = self.btm.stream_update()
             # print(samples)
             self.pq.put_nowait(samples)
             
@@ -258,23 +258,23 @@ class BRAIN_MUSIC_PLAYER(QtWidgets.QMainWindow):
         
 
     def update_channel(self,button):
-        if button.text() == "radioButton":
-            if button.isCheck():
-                print(button.text())
+        if button.text() == "TP9":
+            if button.isChecked():
                 self.btm.set_channel([0])
                 self.btm.init_buffer()
-        elif button.text() == "radioButton_2":
-            if button.isCheck():
+        elif button.text() == "AF7":
+            print("test")
+            if button.isChecked():
                 print(button.text())
                 self.btm.set_channel([1])
                 self.btm.init_buffer()
-        elif button.text() == "radioButton_3":
-            if button.isCheck():
+        elif button.text() == "AF8":
+            if button.isChecked():
                 print(button.text())
                 self.btm.set_channel([2])
                 self.btm.init_buffer()
-        elif button.text() == "radioButton_4":
-            if button.isCheck():
+        elif button.text() == "TP10":
+            if button.isChecked():
                 print(button.text())
                 self.btm.set_channel([3])
                 self.btm.init_buffer()
