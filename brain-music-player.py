@@ -76,7 +76,7 @@ class BRAIN_MUSIC_PLAYER(QtWidgets.QMainWindow):
         self.pq = Queue(maxsize=self.CHUNK)
         self.mq = Queue(maxsize=self.CHUNK)
         
-        self.features_list= ['None','Variance','Alpha/Beta']
+        self.features_list= ['None','Variance','Beta/Alpha', 'Alpha', 'Beta', 'Gamma', 'Delta', 'Theta']
         self.feature = 0
         self.tmpfile = 'temp.wav'
         
@@ -190,20 +190,20 @@ class BRAIN_MUSIC_PLAYER(QtWidgets.QMainWindow):
             tstart = time.time()
 
             modifier = 0
-            if self.feature == 1:
-                modifier = feature_extract.get_one_feature(
-                    self.btm.eeg_buffer,
-                    "variance",
-                    self.btm.freqs
-                )
-            elif self.feature == 2:
-                modifier = feature_extract.get_one_feature(
-                    self.btm.eeg_buffer,
-                    "b_to_a",
-                    self.btm.freqs
-                )
-                # ab_ratio = feats['alpha'] / feats['beta']
-                # print(ab_ratio)
+            # if self.feature == 1:
+            modifier = feature_extract.get_one_feature(
+                self.btm.eeg_buffer,
+                self.features_list[self.feature],
+                self.btm.freqs
+            )
+            # elif self.feature == 2:
+            #     modifier = feature_extract.get_one_feature(
+            #         self.btm.eeg_buffer,
+            #         "b_to_a",
+            #         self.btm.freqs
+            #     )
+            #     # ab_ratio = feats['alpha'] / feats['beta']
+            #     # print(ab_ratio)
             
             self.mbuffer.pop(0)
             self.mbuffer.append(modifier)

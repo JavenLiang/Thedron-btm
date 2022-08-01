@@ -128,6 +128,9 @@ def get_one_feature(eeg_chunk,feature,s_rate):
         numpy, single feature
     """
 
+    if feature == "None":
+        return 0
+    feature = feature.lower()
     if feature == "variance":
         eeg_var = np.var(eeg_chunk,axis=0) #variance of each channel (column)
         eeg_var = eeg_var.mean() #for early prototpying, just average all channels variance   
@@ -157,7 +160,7 @@ def get_one_feature(eeg_chunk,feature,s_rate):
             ix, = np.where((f >= 12) & (f <= 30))    
         elif feature == "gamma":    
             ix, = np.where((f >= 30) & (f <= 55)) 
-        elif feature == "b_to_a":
+        elif feature == "beta/alpha":
             ix_a, = np.where((f >= 8) & (f <= 12))
             band_power_a = np.mean(PSD[ix_a, :], axis=0)
             ix_b, = np.where((f >= 12) & (f <= 30)) 
