@@ -102,7 +102,7 @@ class BRAIN_MUSIC_PLAYER(QtWidgets.QMainWindow):
         self.music_timer.setInterval(0) #msec
         self.music_timer.timeout.connect(self.update_music)
         self.music_timer.start()
-        # self.mdata=[0]
+        self.mdata=[0]
         # self.feature = self.features_list[0]
         
         # data plot timer
@@ -110,7 +110,7 @@ class BRAIN_MUSIC_PLAYER(QtWidgets.QMainWindow):
         self.timer.setInterval(30) #msec
         self.timer.timeout.connect(self.update_plot)
         self.timer.start()
-        # self.pdata = [0]
+        self.pdata = [0]
         
         # Button Events
         self.pushButton.clicked.connect(self.start_music)
@@ -207,6 +207,8 @@ class BRAIN_MUSIC_PLAYER(QtWidgets.QMainWindow):
             
             self.mbuffer.pop(0)
             self.mbuffer.append(modifier)
+            samples = self.mbuffer
+            self.mq.put_nowait(samples)
 
             self.label_3.setText(str(modifier))
             dur = past_dur
@@ -294,6 +296,8 @@ class BRAIN_MUSIC_PLAYER(QtWidgets.QMainWindow):
 
         """
         self.music_on = False
+        self.mbuffer = []
+        self.mq = Queue(maxsize=self.CHUNK)
         # with self.mq.mutex:
         #     self.mq.queue.clear()
         
@@ -308,7 +312,7 @@ class BRAIN_MUSIC_PLAYER(QtWidgets.QMainWindow):
         """
         self.plot_on = False
         self.btm.init_buffer()
-        self.mbuffer = []
+        self.pq = Queue(maxsize=self.CHUNK)
 
     def start_music_stream(self):
         self.getAudio()
@@ -371,11 +375,11 @@ class BRAIN_MUSIC_PLAYER(QtWidgets.QMainWindow):
             while self.plot_on:
                 
                 QtWidgets.QApplication.processEvents()    
-                # try: 
-                #     self.pdata = self.pq.get_nowait()
+                try: 
+                    self.pdata = self.pq.get_nowait()
 
-                # except queue.Empty:
-                #     break
+                except queue.Empty:
+                    break
 
                 # print("update_plot", self.plot_on)
                 self.plotdata = self.btm.eeg_buffer
@@ -392,7 +396,7 @@ class BRAIN_MUSIC_PLAYER(QtWidgets.QMainWindow):
             # start, end = self.canvas.axes.get_ylim()
             # self.canvas.axes.yaxis.set_ticks(np.arange(start, end, 0.5))
             # self.canvas.axes.yaxis.set_major_formatter(ticker.FormatStrFormatter('%0.1f'))
-
+            
             self.canvas.axes.set_ylim( ymin=-10, ymax=10)        
 
             self.canvas.draw()
@@ -406,12 +410,12 @@ class BRAIN_MUSIC_PLAYER(QtWidgets.QMainWindow):
             while self.music_on:
                 
                 QtWidgets.QApplication.processEvents()    
-                # try: 
-                #     # self.mdata = self.mq.get_nowait()
-                #     self.self.pdata = self.pq.get_nowait()
+                try: 
+                    self.mdata = self.mq.get_nowait()
+                    # self.self.pdata = self.pq.get_nowait()
                     
-                # except queue.Empty:
-                #     break
+                except queue.Empty:
+                    break
 
                 # chunk_data = np.vstack(self.pdata).T
                 # new_data = chunk_data[0] #get a shape (250,)
@@ -435,7 +439,7 @@ class BRAIN_MUSIC_PLAYER(QtWidgets.QMainWindow):
             # start, end = self.mp.axes.get_ylim()
             # self.mp.axes.yaxis.set_ticks(np.arange(start, end, 0.5))
             # self.mp.axes.yaxis.set_major_formatter(ticker.FormatStrFormatter('%0.1f'))
-            self.mp.axes.set_ylim( ymin=-1, ymax=10)        
+            self.mp.axes.set_ylim( ymin=-1, ymax=5)        
             self.mp.draw()
         except Exception as e:
             
