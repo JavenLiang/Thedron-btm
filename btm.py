@@ -5,7 +5,7 @@ import csv
 
 class BTM:
     def __init__(self):
-        self.buffer_len = 5           ### length of the buffer (sec)
+        self.buffer_len = 3           ### length of the buffer (sec)
         self.freqs = 0                ### variable for input frequency
         self.data_chunk = 0.25        ### data chunk each time buffer is updated
         self.channel = [0]

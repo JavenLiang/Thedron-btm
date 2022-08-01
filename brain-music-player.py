@@ -230,9 +230,9 @@ class BRAIN_MUSIC_PLAYER(QtWidgets.QMainWindow):
                         # ))
                         mod = ('velocity', 'note')[1]
                         if mod == 'velocity':
-                            msg.velocity = (100*round(modifier)) % HIGH
+                            msg.velocity = min((100*round(modifier)), HIGH)
                         elif mod == 'note':
-                            msg.note = msg.note + round(modifier) % HIGH
+                            msg.note = min(msg.note + 5*round(modifier), HIGH)
                             # round(min(max(dev + msg.velocity, LOW), HIGH))
                     # https://music.stackexchange.com/questions/86241/how-can-i-split-a-midi-file-programatically
                     curr_time = tick2second(msg.time, mid.ticks_per_beat, tempo)
