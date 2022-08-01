@@ -305,7 +305,7 @@ class BRAIN_MUSIC_PLAYER(QtWidgets.QMainWindow):
 
         """
         self.music_on = False
-        self.mbuffer = []
+        self.mbuffer = [0] * 20
         self.mq = Queue(maxsize=self.CHUNK)
         # with self.mq.mutex:
         #     self.mq.queue.clear()
@@ -357,22 +357,22 @@ class BRAIN_MUSIC_PLAYER(QtWidgets.QMainWindow):
             if button.isChecked():
                 self.btm.set_channel([0])
                 self.btm.init_buffer()
-                self.mbuffer = []
+                self.mbuffer = [0] * 20
         elif button.text() == "AF7":
             if button.isChecked():
                 self.btm.set_channel([1])
                 self.btm.init_buffer()
-                self.mbuffer = []
+                self.mbuffer = [0] * 20
         elif button.text() == "AF8":
             if button.isChecked():
                 self.btm.set_channel([2])
                 self.btm.init_buffer()
-                self.mbuffer = []
+                self.mbuffer = [0] * 20
         elif button.text() == "TP10":
             if button.isChecked():
                 self.btm.set_channel([3])
                 self.btm.init_buffer()
-                self.mbuffer = []
+                self.mbuffer = [0] * 20
 
 
 
