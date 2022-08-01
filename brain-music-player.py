@@ -167,13 +167,13 @@ class BRAIN_MUSIC_PLAYER(QtWidgets.QMainWindow):
 
             modifier = 0
             if self.feature == 1:
-                modifier = feature_extract.get_one_features(
+                modifier = feature_extract.get_one_feature(
                     self.btm.eeg_buffer,
                     "variance",
                     self.btm.freqs
                 )
             elif self.feature == 2:
-                modifier = feature_extract.get_one_features(
+                modifier = feature_extract.get_one_feature(
                     self.btm.eeg_buffer,
                     "a_to_b",
                     self.btm.freqs
